@@ -22,7 +22,7 @@
             </li>
             @endif
 
-            {{-- Company Admin Routes --}}
+            <!-- {{-- Company Admin Routes --}}
             @if (Auth::user()->role == 'admin')
             <li class="menu-header">Employees</li>
             <li class="{{ Request::is('company/companies/*/employees') ? 'active' : '' }}">
@@ -30,6 +30,17 @@
             </li>
             <li class="{{ Request::is('company/companies/*/employees/create') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('admin.employees.create', ['companyId' => Auth::user()->company_id]) }}"><i class="fas fa-user-plus"></i> <span>Add Employee</span></a>
+            </li>
+            @endif -->
+
+            {{-- Company Admin Routes --}}
+            @if (Auth::user()->role == 'admin')
+            <li class="menu-header">Employees</li>
+            <li class="{{ Request::is('company/companies/*/employees') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('admin.employees.index' }}"><i class="fas fa-users"></i> <span>Manage Employees</span></a>
+            </li>
+            <li class="{{ Request::is('company/companies/*/employees/create') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('admin.employees.create' }}"><i class="fas fa-user-plus"></i> <span>Add Employee</span></a>
             </li>
             @endif
 

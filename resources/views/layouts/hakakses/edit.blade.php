@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Edit Data Hak Akses')
+@section('title', 'Edit Access Rights Data')
 
 @push('style')
     <!-- CSS Libraries -->
@@ -10,14 +10,14 @@
 <div class="main-content">
     <section class="section">
         <div class="section-header">
-            <h1>Edit Data Hak Akses</h1>
+            <h1>Edit Access Rights Data</h1>
         </div>
         <form action="{{ route('hakakses.update', $hakakses->id) }}" method="POST">
                 @csrf
                 @method('PUT')
 
                 <div class="form-group">
-                    <label for="name">Hak Akses</label>
+                    <label for="name">Access Rights</label>
                     <input type="text" name="role" id="role" class="form-control" value="{{ $hakakses->role }}">
                 </div>
 

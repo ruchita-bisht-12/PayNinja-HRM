@@ -6,6 +6,9 @@ use App\Http\Controllers\ExampleController;
 use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\DesignationManagementController;
+use App\Http\Controllers\DepartmentManagementController;
+use App\Http\Controllers\TeamController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -50,17 +53,55 @@ Route::middleware(['role:admin'])->prefix('company')->name('company.')->group(fu
     Route::get('companies/{companyId}/employees', [CompanyController::class, 'index'])->name('employees.index');
     Route::get('companies/{companyId}/employees/create', [CompanyController::class, 'create'])->name('employees.create');
     Route::post('companies/{companyId}/employees', [CompanyController::class, 'store'])->name('employees.store');
-    Route::get('companies/{companyId}/employees/{employeeId}/edit', [CompanyController::class, 'edit'])->name('employees.edit');
-    Route::put('companies/{companyId}/employees/{employeeId}', [CompanyController::class, 'update'])->name('employees.update');
-    Route::delete('companies/{companyId}/employees/{employeeId}', [CompanyController::class, 'destroy'])->name('employees.destroy');
+    Route::get('companies/{companyId}/employees/{employeeId}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
+    Route::put('companies/{companyId}/employees/{employeeId}', [EmployeeController::class, 'update'])->name('employees.update');
+    Route::delete('companies/{companyId}/employees/{employeeId}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
+
+    // Designation Management
+    Route::resource('designations', DesignationManagementController::class)
+        ->except(['show'])
+        ->names([
+            'index' => 'designations.index',
+            'create' => 'designations.create',
+            'store' => 'designations.store',
+            'edit' => 'designations.edit',
+            'update' => 'designations.update',
+            'destroy' => 'designations.destroy',
+        ]);
+
+    // Department Management
+    Route::resource('departments', DepartmentManagementController::class)
+        ->except(['show'])
+        ->names([
+            'index' => 'departments.index',
+            'create' => 'departments.create',
+            'store' => 'departments.store',
+            'edit' => 'departments.edit',
+            'update' => 'departments.update',
+            'destroy' => 'departments.destroy',
+        ]);
+
+    // Team Management
+    Route::get('departments/{department}/employees', [TeamController::class, 'getEmployeesByDepartment'])
+        ->name('departments.employees');
+    Route::resource('teams', TeamController::class)
+        ->except(['show'])
+        ->names([
+            'index' => 'teams.index',
+            'create' => 'teams.create',
+            'store' => 'teams.store',
+            'edit' => 'teams.edit',
+            'update' => 'teams.update',
+            'destroy' => 'teams.destroy',
+        ]);
+      
 });
-
-
 
 
 // Employee Routes (Only employee can view their own profile)
 Route::middleware(['role:user'])->prefix('employee')->name('employee.')->group(function () {
     Route::get('profile', [EmployeeController::class, 'show'])->name('profile');
+    Route::get('colleagues', [App\Http\Controllers\EmployeeController::class, 'listColleagues'])->name('colleagues'); // Moved and path adjusted
 });
 
 });

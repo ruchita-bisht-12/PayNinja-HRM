@@ -44,6 +44,16 @@
             </div>
 
             <div class="form-group">
+                <label for="designation">Designation:</label>
+                <select class="form-control" id="designation" name="designation_id" required>
+                    <option value="">Select Designation</option>
+                    @foreach ($designations as $designation)
+                        <option value="{{ $designation->id }}">{{ $designation->title }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="form-group">
                 <label for="dob">Date of Birth:</label>
                 <input type="date" class="form-control" id="dob" name="dob">
             </div>
@@ -74,6 +84,11 @@
                     <option value="contract">Contract</option>
                     <option value="intern">Intern</option>
                 </select>
+            </div>
+
+            <div class="form-group">
+                <label for="address">Address:</label>
+                <textarea class="form-control" id="address" name="address" rows="3" placeholder="Enter employee's address"></textarea>
             </div>
 
             <button type="submit" class="btn btn-primary mt-3">Create Employee</button>

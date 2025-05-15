@@ -18,7 +18,7 @@
                 @foreach ($employees as $employee)
                     <tr>
                         <td>{{ $employee->name }}</td>
-                        <td>{{ $employee->email }}</td>
+                        <td>{{ $employee->user ? $employee->user->email : $employee->email }}</td>
                         <td>{{ $employee->department ? $employee->department->name : 'N/A' }}</td>
                         <td>
                             <a href="{{ route('company.employees.edit', [$company->id, $employee->id]) }}" class="btn btn-warning">Edit</a>

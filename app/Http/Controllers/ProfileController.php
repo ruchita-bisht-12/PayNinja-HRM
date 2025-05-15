@@ -19,7 +19,7 @@ class ProfileController extends Controller
         $user->email = $request->input('email');
         $user->save();
 
-        return redirect()->route('profile.edit')->with('status', 'Profil Berhasil Di Update!');
+        return redirect()->route('profile.edit')->with('status', 'Profile successfully updated!!');
     }
 
     public function changepassword()
@@ -38,14 +38,14 @@ class ProfileController extends Controller
             $user = Auth::user();
     
             if (!Hash::check($request->current_password, $user->password)) {
-                return back()->withErrors(['current_password' => 'Password Sebelumnya Salah!']);
+                return back()->withErrors(['current_password' => 'Previous Password Incorrect!']);
             }
 
             $user->fill([
                 'password' => Hash::make($request->new_password)
             ])->save();
     
-            return back()->with('status', 'Password berhasil Diubah!');
+            return back()->with('status', 'Password successfully changed!!');
         }
     }
 }

@@ -22,24 +22,41 @@
             </li>
             @endif
 
+
+            <!-- {{-- or 'employee' --}} -->
+            @if (Auth::user()->role == 'user' || Auth::user()->role == 'employee') 
+    <li class="menu-header">Profile</li>
+    <li class="{{ Request::is('employee/profile') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('employee.profile') }}"><i class="far fa-user"></i> <span>My Profile</span></a>
+    </li>
+    <li class="{{ Request::is('employee/colleagues') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('employee.colleagues') }}"><i class="fas fa-users"></i> <span>My Colleagues</span></a>
+    </li>
+@endif
+
             {{-- Company Admin Routes --}}
-            @if (Auth::user()->role == 'admin')
+            @if (Auth::user()->role == 'admin'&& Auth::user()->company_id)
             <li class="menu-header">Employees</li>
+
             <li class="{{ Request::is('company/companies/*/employees') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('company.employees.index', ['companyId' => Auth::user()->company_id]) }}"><i class="fas fa-users"></i> <span>Manage Employees</span></a>
             </li>
             <li class="{{ Request::is('company/companies/*/employees/create') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('company.employees.create', ['companyId' => Auth::user()->company_id]) }}"><i class="fas fa-user-plus"></i> <span>Add Employee</span></a>
             </li>
+            <li class="{{ Request::is('company/designations*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('company.designations.index') }}"><i class="fas fa-id-badge"></i> <span>Manage Designations</span></a>
+        
+            <li class="{{ Request::is('company/departments*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('company.departments.index') }}"><i class="fas fa-building"></i> <span>Manage Departments</span></a>
+            </li>
+
+            <li class="{{ Request::is('company/teams*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('company.teams.index', ['companyId' => Auth::user()->company_id]) }}"><i class="fas fa-users-cog"></i> <span>Manage Teams</span></a>
+            </li>
+         
             @endif
 
-            {{-- Employee Routes --}}
-            @if (Auth::user()->role == 'user')
-            <li class="menu-header">Profile</li>
-            <li class="{{ Request::is('employee/profile') ? 'active' : '' }}">
-                <a class="nav-link" href="{{ route('employee.profile') }}"><i class="far fa-user"></i> <span>My Profile</span></a>
-            </li>
-            @endif
 
 
             <!-- profile ganti password -->
@@ -50,7 +67,7 @@
             <li class="{{ Request::is('profile/change-password') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ url('profile/change-password') }}"><i class="fas fa-key"></i> <span>Change Password</span></a>
             </li>
-            <li class="menu-header">Starter</li>
+            <!-- <li class="menu-header">Starter</li>
             <li class="{{ Request::is('blank-page') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ url('blank-page') }}"><i class="far fa-square"></i> <span>Blank Page</span></a>
             </li>
@@ -90,7 +107,7 @@
             </li>
             <li class="{{ Request::is('about-example') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ url('about-example') }}"><i class="fas fa-info-circle"></i> <span>About Example</span></a>
-            </li>
+            </li> -->
         </ul>
     </aside>
 </div>

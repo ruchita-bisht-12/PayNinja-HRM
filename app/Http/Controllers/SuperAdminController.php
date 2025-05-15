@@ -52,6 +52,7 @@ class SuperAdminController extends Controller
  // Update the admin's company_id if needed
  $admin = \App\Models\User::find($validated['admin_id']);
  $admin->company_id = $company->id;
+ $admin->role = 'admin';
  $admin->save();
 
 
@@ -90,6 +91,7 @@ class SuperAdminController extends Controller
         // Update the admin's company_id if needed
         $admin = \App\Models\User::find($validated['admin_id']);
         $admin->company_id = $company->id;
+        $admin->role = 'admin';
         $admin->save();
 
         return redirect()->route('superadmin.companies.index')->with('success', 'Company Updated Successfully');

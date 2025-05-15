@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\User;
 use App\Models\Department;
+use App\Models\Designation;
+use App\Models\Employee;
 use App\Models\EmployeeDetail;
 use Illuminate\Http\Request;
 
@@ -14,10 +16,12 @@ class CompanyController extends Controller
     {
         // Display all employees of a company
         $company = Company::findOrFail($companyId);
-        // $employees = $company->users; // Assuming relationship between Company and User exists (One to Many)
-        $employees = User::with('department')
-        ->where('company_id', $companyId)
-        ->get();
+        
+        // Get employees from the employees table instead of users
+        $employees = Employee::with(['department', 'user'])
+            ->where('company_id', $companyId)
+            ->get();
+            
         return view('company.employees.index', compact('company', 'employees'));
     }
 
@@ -26,12 +30,14 @@ class CompanyController extends Controller
         // Show form to create a new employee for a company
         $company = Company::findOrFail($companyId);
         $departments = Department::where('company_id', $companyId)->get(); // Get departments for the company
+        $designations = Designation::where('company_id', $companyId)->get(); // Get designations for the company
         
-        return view('company.employees.create', compact('company', 'departments'));
+        return view('company.employees.create', compact('company', 'departments', 'designations'));
     }
 
     public function store(Request $request, $companyId)
     {
+        // dd($request->all());
         // Find the company or throw a 404 if not found
         $company = Company::findOrFail($companyId);
     
@@ -41,17 +47,19 @@ class CompanyController extends Controller
             'email' => 'required|email|unique:users',
             'password' => 'required|string|min:6',
             'department_id' => 'required|exists:departments,id',
+            'designation_id' => 'required|exists:designations,id',
+            'phone' => 'nullable|string|max:20',
             'dob' => 'nullable|date',
             'gender' => 'nullable|in:male,female,other',
             'emergency_contact' => 'nullable|string|max:255',
-            'joining_date' => 'nullable|date',
-            'employment_type' => 'nullable|in:permanent,contract,intern',
+            'joining_date' => 'required|date',
+            'employment_type' => 'required|in:permanent,contract,intern',
+            'address' => 'nullable|string|max:500',
         ]);
     
-        // **Manually add these fields to `$validated`**
         $validated['password'] = bcrypt($validated['password']);
         $validated['role'] = 'employee';
-        $validated['company_id'] = $company->id; // 👈 Now this is explicitly added
+        $validated['company_id'] = $company->id;
     
         // Ensure `company_id` is fillable in User model
         if (!in_array('company_id', (new User())->getFillable())) {
@@ -59,16 +67,36 @@ class CompanyController extends Controller
         }
     
         // Create the new employee (User)
-        $employee = User::create($validated);
+        $user = User::create($validated);
     
         // Create associated employee details
         EmployeeDetail::create([
-            'user_id' => $employee->id,
-            'dob' => $validated['dob'],
-            'gender' => $validated['gender'],
-            'emergency_contact' => $validated['emergency_contact'],
+            'user_id' => $user->id,
+            'dob' => $validated['dob'] ?? null,
+            'gender' => $validated['gender'] ?? null,
+            'emergency_contact' => $validated['emergency_contact'] ?? null,
             'joining_date' => $validated['joining_date'],
-            // 'employment_type' => $validated['employment_type'],
+            'employment_type' => $validated['employment_type'],
+        ]);
+
+        // Create employee record with all necessary fields
+        Employee::create([
+            'email' => $validated['email'],
+            'name' => $validated['name'],
+            'user_id' => $user->id,
+            'company_id' => $company->id,
+            'department_id' => $validated['department_id'],
+            'designation_id' => $validated['designation_id'],
+            'joining_date' => $validated['joining_date'],
+            'employment_type' => $validated['employment_type'],
+            'gender' => $validated['gender'] ?? null,
+            'dob' => $validated['dob'] ?? null,
+            'phone' => $validated['emergency_contact'] ?? null,
+            'emergency_contact' => $validated['emergency_contact'] ?? null,
+            'address' => $validated['address'] ?? null,
+            // 'status' => 'active',
+            'created_by' => auth()->id(),
+            // 'updated_by' => auth()->id()
         ]);
     
         // Redirect to the employee list with a success message

@@ -31,7 +31,7 @@ class RoleMiddleware
         Log::info('Authenticated user: ' . $user->email . ' with role: ' . $user->role);
 
         // Check if the user has a required role (you might need to define $roles)
-        $roles = ['superadmin', 'admin', 'user']; // Define required roles
+        $roles = ['superadmin', 'admin', 'user', 'employee']; // Define required roles
 
         if (!in_array($user->role, $roles)) {
             // Log unauthorized access attempt
