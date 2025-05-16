@@ -1,79 +1,89 @@
 @extends('layouts.app')
 
-@section('title', 'Access Rights')
-
-@push('style')
-    <!-- CSS Libraries -->
-@endpush
-
 @section('content')
-    <div class="main-content">
-        <section class="section">
-            <div class="section-header">
-                <h1>Access Rights</h1>
-            </div>
-            @if (session('message'))
-                <div class="alert alert-success">
-                    {{ session('message') }}
-                </div>
-            @endif
-            @if (session('error'))
-                <div class="alert alert-danger">
-                    {{ session('error') }}
-                </div>
-            @endif
-            <div class="section-body">
-                <div class="table-responsive">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <form action="{{ route('hakakses.index') }}" method="GET">
-                                <div class="input-group">
-                                    <input type="text" name="search" class="form-control" placeholder="Search by ID...">
-                                    <div class="input-group-append">
-                                        <button class="btn btn-primary" style="margin-left:5px;" type="submit">Search</button>
-                                    </div>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">User Access Rights</h4>
+                    <div class="search-form">
+                        <form action="{{ route('hakakses.index') }}" method="GET" class="form-inline">
+                            <div class="input-group">
+                                <input type="text" name="search" class="form-control" placeholder="Search by name or email..." value="{{ request('search') }}">
+                                <div class="input-group-append">
+                                    <button class="btn btn-primary" type="submit">Search</button>
                                 </div>
-                            </form>
-                        </div>
+                            </div>
+                        </form>
                     </div>
-                    <table class="table table-bordered">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Nama</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($hakakses as $item)
-                                <tr>
-                                    <td>{{ $item->id }}</td>
-                                    <td>{{ $item->name }}</td>
-                                    <td>{{ $item->email }}</td>
-                                    <td>{{ $item->role }}</td>
+                </div>
 
-                                    <td>
-                                        <a href="{{ route('hakakses.edit', $item->id) }}" class="btn btn-primary">Edit</a>
-                                        <form action="{{ route('hakakses.delete', $item->id) }}" method="POST" style="display: inline-block;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger">Delete</button>
-                                        </form>
-                                    </td> <!-- Add Edit and Delete buttons for each row -->
+                <div class="card-body">
+                    @if (session('success'))
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ session('success') }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    @endif
+
+                    @if (session('error'))
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            {{ session('error') }}
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                    @endif
+
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Actions</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @forelse ($hakakses as $user)
+                                    <tr>
+                                        <td>{{ $user->id }}</td>
+                                        <td>{{ $user->name }}</td>
+                                        <td>{{ $user->email }}</td>
+                                        <td>
+                                            <span class="badge badge-{{ $user->role === 'superadmin' ? 'danger' : ($user->role === 'admin' ? 'warning' : 'info') }}">
+                                                {{ ucfirst($user->role) }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            @if ($user->id !== auth()->id())
+                                                <a href="{{ route('hakakses.edit', $user->id) }}" class="btn btn-sm btn-info">Edit</a>
+                                                <form action="{{ route('hakakses.delete', $user->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this user?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                                </form>
+                                            @else
+                                                <span class="text-muted">Current User</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center">No users found.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </section>
+        </div>
     </div>
+</div>
 @endsection
-
-@push('scripts')
-    <!-- JS Libraries -->
-
-    <!-- Page Specific JS File -->
-@endpush

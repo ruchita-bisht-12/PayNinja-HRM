@@ -1,0 +1,606 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\LeaveRequest;
+use App\Models\Employee;
+use App\Models\LeaveType;
+use App\Models\LeaveBalance;
+use App\Models\Department;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
+
+class LeaveRequestController extends Controller
+{
+    /**
+     * Display the admin calendar view.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function adminCalendar()
+    {
+        $companyId = Auth::user()->company_id;
+        $departments = Department::where('company_id', $companyId)->get();
+        return view('company.leave_requests.calendar', compact('departments'));
+    }
+
+    /**
+     * Get leave requests as calendar events for admin.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function adminCalendarEvents(Request $request)
+    {
+        $companyId = Auth::user()->company_id;
+        $query = LeaveRequest::whereHas('employee', function ($query) use ($companyId) {
+            $query->where('company_id', $companyId);
+        })->with(['employee.department', 'leaveType']);
+
+        if ($request->filled('department_id')) {
+            $query->whereHas('employee', function ($q) use ($request) {
+                $q->where('department_id', $request->department_id);
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $leaveRequests = $query->get();
+
+        return response()->json($leaveRequests->map(function ($request) {
+            $statusColor = [
+                'pending' => 'warning',
+                'approved' => 'success',
+                'rejected' => 'danger',
+                'cancelled' => 'secondary'
+            ][$request->status];
+
+            return [
+                'id' => $request->id,
+                'title' => $request->employee->name . ' - ' . $request->leaveType->name,
+                'start' => $request->start_date,
+                'end' => Carbon::parse($request->end_date)->addDay()->format('Y-m-d'),
+                'classNames' => ['fc-event-' . $request->status],
+                'extendedProps' => [
+                    'employeeName' => $request->employee->name,
+                    'department' => $request->employee->department->name,
+                    'leaveType' => $request->leaveType->name,
+                    'status' => $request->status,
+                    'statusColor' => $statusColor,
+                    'startDate' => $request->start_date->format('Y-m-d'),
+                    'endDate' => $request->end_date->format('Y-m-d'),
+                    'totalDays' => $request->total_days,
+                    'reason' => $request->reason,
+                    'adminRemarks' => $request->admin_remarks,
+                    'detailsUrl' => route('company.leave-requests.show', $request->id),
+                    'approveUrl' => route('company.leave-requests.approve', $request->id),
+                    'rejectUrl' => route('company.leave-requests.reject', $request->id)
+                ]
+            ];
+        }));
+    }
+
+    /**
+     * Display the employee calendar view.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function employeeCalendar()
+    {
+        return view('employee.leave_requests.calendar');
+    }
+
+    /**
+     * Get leave requests as calendar events for employee.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function employeeCalendarEvents()
+    {
+        $employee = Employee::where('user_id', Auth::id())->firstOrFail();
+        $leaveRequests = LeaveRequest::where('employee_id', $employee->id)
+            ->with(['leaveType'])
+            ->get();
+
+        return response()->json($leaveRequests->map(function ($request) {
+            $statusColor = [
+                'pending' => 'warning',
+                'approved' => 'success',
+                'rejected' => 'danger',
+                'cancelled' => 'secondary'
+            ][$request->status];
+
+            return [
+                'id' => $request->id,
+                'title' => $request->leaveType->name,
+                'start' => $request->start_date,
+                'end' => Carbon::parse($request->end_date)->addDay()->format('Y-m-d'),
+                'classNames' => ['fc-event-' . $request->status],
+                'extendedProps' => [
+                    'leaveType' => $request->leaveType->name,
+                    'status' => $request->status,
+                    'statusColor' => $statusColor,
+                    'startDate' => $request->start_date->format('Y-m-d'),
+                    'endDate' => $request->end_date->format('Y-m-d'),
+                    'totalDays' => $request->total_days,
+                    'reason' => $request->reason,
+                    'adminRemarks' => $request->admin_remarks,
+                    'detailsUrl' => route('employee.leave-requests.show', $request->id)
+                ]
+            ];
+        }));
+    }
+    /**
+     * Display a listing of the leave requests for admin.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function adminIndex(Request $request)
+    {
+        $companyId = Auth::user()->company_id;
+        $query = LeaveRequest::whereHas('employee', function ($query) use ($companyId) {
+            $query->where('company_id', $companyId);
+        })->with(['employee', 'leaveType', 'approver']);
+
+        // Filter by department
+        if ($request->filled('department_id')) {
+            $query->whereHas('employee', function ($q) use ($request) {
+                $q->where('department_id', $request->department_id);
+            });
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by date range
+        if ($request->filled('date_from')) {
+            $query->where('start_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->where('end_date', '<=', $request->date_to);
+        }
+
+        $leaveRequests = $query->latest()->get();
+        $departments = Department::where('company_id', $companyId)->get();
+        
+        return view('company.leave_requests.index', compact('leaveRequests', 'departments'));
+    }
+
+    /**
+     * Display a listing of the leave requests for employee.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function employeeIndex()
+    {
+        $employee = Employee::where('user_id', Auth::id())->first();
+        
+        if (!$employee) {
+            abort(404, 'Employee record not found.');
+        }
+        
+        $leaveRequests = LeaveRequest::where('employee_id', $employee->id)
+            ->with(['leaveType', 'approver'])
+            ->latest()
+            ->get();
+
+        $currentYear = Carbon::now()->year;
+        $leaveBalances = LeaveBalance::where('employee_id', $employee->id)
+            ->where('year', $currentYear)
+            ->with('leaveType')
+            ->get();
+            
+        return view('employee.leave_requests.index', compact('leaveRequests', 'leaveBalances'));
+    }
+
+    /**
+     * Show the form for creating a new leave request.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        $employee = Employee::where('user_id', Auth::id())->first();
+        
+        if (!$employee) {
+            abort(404, 'Employee record not found.');
+        }
+        
+        $leaveTypes = LeaveType::where('company_id', $employee->company_id)
+            ->where('is_active', true)
+            ->get();
+            
+        $currentYear = Carbon::now()->year;
+        
+        // Get leave balances for the employee
+        $leaveBalances = LeaveBalance::where('employee_id', $employee->id)
+            ->where('year', $currentYear)
+            ->with('leaveType')
+            ->get();
+            
+        return view('employee.leave_requests.create', compact('leaveTypes', 'leaveBalances'));
+    }
+
+    /**
+     * Store a newly created leave request in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        $employee = Employee::where('user_id', Auth::id())->first();
+        
+        if (!$employee) {
+            abort(404, 'Employee record not found.');
+        }
+        
+        $validated = $request->validate([
+            'leave_type_id' => 'required|exists:leave_types,id',
+            'start_date' => 'required|date|after_or_equal:today',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'reason' => 'required|string',
+            'attachment' => 'nullable|file|max:2048', // 2MB max
+        ]);
+        
+        // Check if leave type belongs to the company
+        $leaveType = LeaveType::findOrFail($validated['leave_type_id']);
+        if ($leaveType->company_id !== $employee->company_id) {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        // Calculate total days
+        $startDate = Carbon::parse($validated['start_date']);
+        $endDate = Carbon::parse($validated['end_date']);
+        $totalDays = $startDate->diffInDays($endDate) + 1;
+        
+        // Check leave balance
+        $currentYear = Carbon::now()->year;
+        $leaveBalance = LeaveBalance::where('employee_id', $employee->id)
+            ->where('leave_type_id', $validated['leave_type_id'])
+            ->where('year', $currentYear)
+            ->first();
+            
+        if (!$leaveBalance) {
+            return redirect()->back()->with('error', 'No leave balance found for this leave type.');
+        }
+        
+        $remainingDays = $leaveBalance->total_days - $leaveBalance->used_days;
+        
+        if ($totalDays > $remainingDays) {
+            return redirect()->back()->with('error', "Insufficient leave balance. You have only {$remainingDays} days remaining.");
+        }
+        
+        // Handle attachment upload
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $attachmentPath = $request->file('attachment')->store('leave-attachments', 'public');
+        }
+        
+        // Create leave request
+        $leaveRequest = LeaveRequest::create([
+            'employee_id' => $employee->id,
+            'leave_type_id' => $validated['leave_type_id'],
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'total_days' => $totalDays,
+            'reason' => $validated['reason'],
+            'attachment_path' => $attachmentPath,
+            'status' => 'pending',
+        ]);
+        
+        return redirect()->route('employee.leave-requests.index')
+            ->with('success', 'Leave request submitted successfully.');
+    }
+
+    /**
+     * Display the specified leave request.
+     *
+     * @param  \App\Models\LeaveRequest  $leaveRequest
+     * @return \Illuminate\Http\Response
+     */
+    public function show(LeaveRequest $leaveRequest)
+    {
+        $user = Auth::user();
+        $employee = Employee::where('user_id', $user->id)->first();
+        
+        // Check if user is authorized to view this leave request
+        if ($user->role === 'admin') {
+            // Admin can only view leave requests from their company
+            if ($leaveRequest->employee->company_id !== $user->company_id) {
+                abort(403, 'Unauthorized action.');
+            }
+        } elseif ($employee && $leaveRequest->employee_id !== $employee->id) {
+            // Employee can only view their own leave requests
+            abort(403, 'Unauthorized action.');
+        }
+        
+        // Load the leave request with its relationships
+        $leaveRequest->load(['employee', 'leaveType', 'approver']);
+
+        // Return appropriate view based on user role
+        $viewPath = $user->role === 'admin' ? 'company.leave_requests.show' : 'employee.leave_requests.show';
+        return view($viewPath, compact('leaveRequest'));
+    }
+
+    /**
+     * Show the form for editing the specified leave request.
+     *
+     * @param  \App\Models\LeaveRequest  $leaveRequest
+     * @return \Illuminate\Http\Response
+     */
+    public function edit(LeaveRequest $leaveRequest)
+    {
+        $employee = Employee::where('user_id', Auth::id())->first();
+        
+        // Check if user is authorized to edit this leave request
+        if (!$employee || $leaveRequest->employee_id !== $employee->id) {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        // Check if leave request is still pending
+        if ($leaveRequest->status !== 'pending') {
+            return redirect()->route('employee.leave-requests.index')
+                ->with('error', 'Only pending leave requests can be edited.');
+        }
+        
+        $leaveTypes = LeaveType::where('company_id', $employee->company_id)
+            ->where('is_active', true)
+            ->get();
+            
+        $currentYear = Carbon::now()->year;
+        
+        // Get leave balances for the employee
+        $leaveBalances = LeaveBalance::where('employee_id', $employee->id)
+            ->where('year', $currentYear)
+            ->with('leaveType')
+            ->get();
+            
+        return view('employee.leave_requests.edit', compact('leaveRequest', 'leaveTypes', 'leaveBalances'));
+    }
+
+    /**
+     * Update the specified leave request in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\LeaveRequest  $leaveRequest
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, LeaveRequest $leaveRequest)
+    {
+        $employee = Employee::where('user_id', Auth::id())->first();
+        
+        // Check if user is authorized to update this leave request
+        if (!$employee || $leaveRequest->employee_id !== $employee->id) {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        // Check if leave request is still pending
+        if ($leaveRequest->status !== 'pending') {
+            return redirect()->route('employee.leave-requests.index')
+                ->with('error', 'Only pending leave requests can be updated.');
+        }
+        
+        $validated = $request->validate([
+            'leave_type_id' => 'required|exists:leave_types,id',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'reason' => 'required|string',
+            'attachment' => 'nullable|file|max:2048', // 2MB max
+        ]);
+        
+        // Check if leave type belongs to the company
+        $leaveType = LeaveType::findOrFail($validated['leave_type_id']);
+        if ($leaveType->company_id !== $employee->company_id) {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        // Calculate total days
+        $startDate = Carbon::parse($validated['start_date']);
+        $endDate = Carbon::parse($validated['end_date']);
+        $totalDays = $endDate->diffInDays($startDate) + 1;
+        
+        // Check leave balance
+        $currentYear = Carbon::now()->year;
+        $leaveBalance = LeaveBalance::where('employee_id', $employee->id)
+            ->where('leave_type_id', $validated['leave_type_id'])
+            ->where('year', $currentYear)
+            ->first();
+            
+        if (!$leaveBalance) {
+            return redirect()->back()->with('error', 'No leave balance found for this leave type.');
+        }
+        
+        // If leave type changed, check balance
+        if ($leaveRequest->leave_type_id != $validated['leave_type_id']) {
+            $remainingDays = $leaveBalance->total_days - $leaveBalance->used_days;
+            
+            if ($totalDays > $remainingDays) {
+                return redirect()->back()->with('error', "Insufficient leave balance. You have only {$remainingDays} days remaining.");
+            }
+        } else {
+            // If same leave type but days changed
+            $additionalDays = $totalDays - $leaveRequest->total_days;
+            $remainingDays = $leaveBalance->total_days - $leaveBalance->used_days;
+            
+            if ($additionalDays > $remainingDays) {
+                return redirect()->back()->with('error', "Insufficient leave balance. You have only {$remainingDays} days remaining.");
+            }
+        }
+        
+        // Handle attachment upload
+        if ($request->hasFile('attachment')) {
+            // Delete old attachment if exists
+            if ($leaveRequest->attachment_path) {
+                Storage::disk('public')->delete($leaveRequest->attachment_path);
+            }
+            
+            $attachmentPath = $request->file('attachment')->store('leave-attachments', 'public');
+            $validated['attachment_path'] = $attachmentPath;
+        }
+        
+        // Update leave request
+        $validated['total_days'] = $totalDays;
+        $leaveRequest->update($validated);
+        
+        return redirect()->route('employee.leave-requests.index')
+            ->with('success', 'Leave request updated successfully.');
+    }
+
+    /**
+     * Cancel the specified leave request.
+     *
+     * @param  \App\Models\LeaveRequest  $leaveRequest
+     * @return \Illuminate\Http\Response
+     */
+    public function cancel(LeaveRequest $leaveRequest)
+    {
+        $employee = Employee::where('user_id', Auth::id())->first();
+        
+        // Check if user is authorized to cancel this leave request
+        if (!$employee || $leaveRequest->employee_id !== $employee->id) {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        // Check if leave request is still pending
+        if ($leaveRequest->status !== 'pending') {
+            return redirect()->route('employee.leave-requests.index')
+                ->with('error', 'Only pending leave requests can be cancelled.');
+        }
+        
+        $leaveRequest->update(['status' => 'cancelled']);
+        
+        return redirect()->route('employee.leave-requests.index')
+            ->with('success', 'Leave request cancelled successfully.');
+    }
+
+    /**
+     * Approve the specified leave request.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\LeaveRequest  $leaveRequest
+     * @return \Illuminate\Http\Response
+     */
+    public function approve(Request $request, LeaveRequest $leaveRequest)
+    {
+        // Check if user is admin
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        // Check if leave request belongs to an employee in the company
+        if ($leaveRequest->employee->company_id !== Auth::user()->company_id) {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        // Check if leave request is pending
+        if ($leaveRequest->status !== 'pending') {
+            return redirect()->route('company.leave-requests.index')
+                ->with('error', 'Only pending leave requests can be approved.');
+        }
+        
+        $validated = $request->validate([
+            'admin_remarks' => 'nullable|string',
+        ]);
+        
+        // Update leave balance
+        $leaveBalance = LeaveBalance::where('employee_id', $leaveRequest->employee_id)
+            ->where('leave_type_id', $leaveRequest->leave_type_id)
+            ->where('year', Carbon::parse($leaveRequest->start_date)->year)
+            ->first();
+            
+        if ($leaveBalance) {
+            $leaveBalance->update([
+                'used_days' => $leaveBalance->used_days + $leaveRequest->total_days,
+            ]);
+        }
+        
+        // Approve leave request
+        $leaveRequest->update([
+            'status' => 'approved',
+            'admin_remarks' => $validated['admin_remarks'] ?? null,
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
+        ]);
+        
+        return redirect()->route('company.leave-requests.index')
+            ->with('success', 'Leave request approved successfully.');
+    }
+
+    /**
+     * Reject the specified leave request.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\LeaveRequest  $leaveRequest
+     * @return \Illuminate\Http\Response
+     */
+    public function reject(Request $request, LeaveRequest $leaveRequest)
+    {
+        // Check if user is admin
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        // Check if leave request belongs to an employee in the company
+        if ($leaveRequest->employee->company_id !== Auth::user()->company_id) {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        // Check if leave request is pending
+        if ($leaveRequest->status !== 'pending') {
+            return redirect()->route('company.leave-requests.index')
+                ->with('error', 'Only pending leave requests can be rejected.');
+        }
+        
+        $validated = $request->validate([
+            'admin_remarks' => 'required|string',
+        ]);
+        
+        // Reject leave request
+        $leaveRequest->update([
+            'status' => 'rejected',
+            'admin_remarks' => $validated['admin_remarks'],
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
+        ]);
+        
+        return redirect()->route('company.leave-requests.index')
+            ->with('success', 'Leave request rejected successfully.');
+    }
+
+    /**
+     * Display the specified leave request for admin.
+     *
+     * @param  \App\Models\LeaveRequest  $leaveRequest
+     * @return \Illuminate\Http\Response
+     */
+    public function adminShow(LeaveRequest $leaveRequest)
+    {
+        // Check if user is admin
+        if (Auth::user()->role !== 'admin') {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        // Check if leave request belongs to an employee in the company
+        if ($leaveRequest->employee->company_id !== Auth::user()->company_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Load necessary relationships
+        $leaveRequest->load(['employee.department', 'leaveType', 'approver']);
+
+        // Get leave balance for this leave type
+        $leaveBalance = LeaveBalance::where('employee_id', $leaveRequest->employee_id)
+            ->where('leave_type_id', $leaveRequest->leave_type_id)
+            ->where('year', Carbon::parse($leaveRequest->start_date)->year)
+            ->first();
+
+        return view('company.leave_requests.show', compact('leaveRequest', 'leaveBalance'));
+    }
+}

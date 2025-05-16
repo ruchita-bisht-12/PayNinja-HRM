@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Carbon\Carbon;
 
 class Employee extends Model
 {
@@ -88,5 +89,48 @@ class Employee extends Model
                     ->wherePivot('team_id', $team->id)
                     ->wherePivot('role', 'reportee')
                     ->exists();
+    }
+
+    /**
+     * Get the leave balances for this employee.
+     */
+    public function leaveBalances()
+    {
+        return $this->hasMany(LeaveBalance::class);
+    }
+
+    /**
+     * Get the leave requests for this employee.
+     */
+    public function leaveRequests()
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
+
+    /**
+     * Get the leave balance for a specific leave type and year.
+     */
+    public function getLeaveBalance($leaveTypeId, $year = null)
+    {
+        $year = $year ?? Carbon::now()->year;
+        
+        return $this->leaveBalances()
+                    ->where('leave_type_id', $leaveTypeId)
+                    ->where('year', $year)
+                    ->first();
+    }
+
+    /**
+     * Check if employee has sufficient leave balance.
+     */
+    public function hasSufficientLeaveBalance($leaveTypeId, $days, $year = null)
+    {
+        $balance = $this->getLeaveBalance($leaveTypeId, $year);
+        
+        if (!$balance) {
+            return false;
+        }
+        
+        return ($balance->total_days - $balance->used_days) >= $days;
     }
 }

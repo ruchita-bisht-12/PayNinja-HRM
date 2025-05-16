@@ -32,6 +32,17 @@
     <li class="{{ Request::is('employee/colleagues') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('employee.colleagues') }}"><i class="fas fa-users"></i> <span>My Colleagues</span></a>
     </li>
+    
+    <li class="menu-header">Leave Management</li>
+    <li class="{{ Request::is('employee/leave-requests') && !Request::is('employee/leave-requests/create') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('employee.leave-requests.index') }}"><i class="fas fa-clipboard-list"></i> <span>My Leave Requests</span></a>
+    </li>
+    <li class="{{ Request::is('employee/leave-requests/create') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('employee.leave-requests.create') }}"><i class="fas fa-calendar-plus"></i> <span>Apply for Leave</span></a>
+    </li>
+    <li class="{{ Request::is('employee/leave-requests/calendar') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('employee.leave-requests.calendar') }}"><i class="fas fa-calendar-alt"></i> <span>Leave Calendar</span></a>
+    </li>
 @endif
 
             {{-- Company Admin Routes --}}
@@ -54,8 +65,30 @@
             <li class="{{ Request::is('company/teams*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('company.teams.index', ['companyId' => Auth::user()->company_id]) }}"><i class="fas fa-users-cog"></i> <span>Manage Teams</span></a>
             </li>
+
+            <li class="menu-header">Leave Management</li>
+            <li class="{{ Request::is('company/leave-types*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('company.leave-types.index') }}"><i class="fas fa-calendar-alt"></i> <span>Leave Types</span></a>
+            </li>
+            <li class="{{ Request::is('company/leave-balances*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('company.leave-balances.index') }}"><i class="fas fa-balance-scale"></i> <span>Leave Balances</span></a>
+            </li>
+            <li class="{{ Request::is('company/leave-requests') && !Request::is('company/leave-requests/calendar') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('company.leave-requests.index') }}"><i class="fas fa-clipboard-list"></i> <span>Leave Requests</span></a>
+            </li>
+            <li class="{{ Request::is('company/leave-requests/calendar') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('company.leave-requests.calendar') }}"><i class="fas fa-calendar-alt"></i> <span>Leave Calendar</span></a>
+            </li>
          
             @endif
+
+
+
+          
+            
+            
+
+     
 
 
 

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\hakakses;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class HakaksesController extends Controller
@@ -12,70 +12,56 @@ class HakaksesController extends Controller
      */
     public function index(Request $request)
     {
-        //
         $search = $request->get('search');
+        $query = User::query();
+
         if ($search) {
-            $data['hakakses'] = hakakses::where('id', 'like', "%{$search}%")->get();
-        } else {
-            $data['hakakses'] = hakakses::all();
+            $query->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
         }
-        return view('layouts.hakakses.index', $data);
-    }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(hakakses $hakakses)
-    {
-        //
+        $hakakses = $query->get();
+        return view('layouts.hakakses.index', compact('hakakses'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit($id)
+    public function edit(User $user)
     {
-        //
-        $hakakses = hakakses::find($id);
-        return view('layouts.hakakses.edit', compact('hakakses'));
+        return view('layouts.hakakses.edit', compact('user'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, hakakses $hakakses, $id)
+    public function update(Request $request, User $user)
     {
-        //
-        // dd($request->all());
-        $hakakses = hakakses::find($id);
+        $validated = $request->validate([
+            'role' => 'required|in:superadmin,admin,employee,user'
+        ]);
 
-        $hakakses->role = $request->role;
-        $hakakses->save();
-        return redirect()->route('hakakses.index');
+        $user->update([
+            'role' => $validated['role']
+        ]);
+
+        return redirect()->route('hakakses.index')
+            ->with('success', 'User role updated successfully');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(hakakses $hakakses)
+    public function destroy(User $user)
     {
-        //
-        $hakakses->delete();
+        if ($user->id === auth()->id()) {
+            return redirect()->route('hakakses.index')
+                ->with('error', 'You cannot delete your own account');
+        }
+
+        $user->delete();
+
+        return redirect()->route('hakakses.index')
+            ->with('success', 'User deleted successfully');
     }
 }

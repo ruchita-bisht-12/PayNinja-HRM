@@ -12,6 +12,89 @@ use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
 {
+    public function index($companyId)
+    {
+        $company = Company::findOrFail($companyId);
+        
+        $employees = Employee::with(['department', 'designation', 'user'])
+            ->whereHas('user', function($query) use ($companyId) {
+                $query->where('company_id', $companyId);
+            })
+            ->orderBy('name')
+            ->get();
+
+        return view('company.employees.index', compact('company', 'employees'));
+    }
+
+    public function create($companyId)
+    {
+        $company = Company::findOrFail($companyId);
+        $departments = Department::where('company_id', $companyId)->get();
+        $designations = Designation::where('company_id', $companyId)->get();
+
+        return view('company.employees.create', compact('company', 'departments', 'designations'));
+    }
+
+    public function store(Request $request, $companyId)
+    {
+        $company = Company::findOrFail($companyId);
+
+        // Validate user data
+        $validated = $request->validate([
+
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:8',
+            'department_id' => 'required|exists:departments,id',
+            'designation_id' => 'required|exists:designations,id',
+            'dob' => 'required|date',
+            'gender' => 'required|in:male,female,other',
+            'emergency_contact' => 'nullable|string|max:255',
+            'joining_date' => 'required|date',
+            'employment_type' => 'required|in:permanent,contract,intern',
+            'address' => 'nullable|string|max:500',
+        ]);
+
+        // Create user
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => bcrypt($validated['password']),
+            'company_id' => $companyId,
+            'role' => 'employee'
+        ]);
+
+        // Create employee record
+        $employee = Employee::create([
+            'phone' => $validated['emergency_contact'],
+            'email' => $validated['email'],
+            'company_id' => $companyId,
+            'user_id' => $user->id,
+            'name' => $validated['name'],
+            'department_id' => $validated['department_id'],
+            'designation_id' => $validated['designation_id'],
+            'dob' => $validated['dob'],
+            'gender' => $validated['gender'],
+            'emergency_contact' => $validated['emergency_contact'] ?? '',
+            'joining_date' => $validated['joining_date'],
+            'employment_type' => $validated['employment_type'],
+            'address' => $validated['address'] ?? '',
+            'created_by' => auth()->id()
+        ]);
+
+        // Create employee details
+        EmployeeDetail::create([
+            'user_id' => $user->id,
+            'dob' => $validated['dob'],
+            'gender' => $validated['gender'],
+            'emergency_contact' => $validated['emergency_contact'] ?? null,
+            'joining_date' => $validated['joining_date'],
+            'employment_type' => $validated['employment_type']
+        ]);
+
+        return redirect()->route('company.employees.index', $companyId)
+            ->with('success', 'Employee created successfully');
+    }
     public function show()
     {
         // Display logged-in employee data

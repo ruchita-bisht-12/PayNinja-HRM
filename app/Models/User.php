@@ -25,6 +25,14 @@ class User extends Authenticatable
     ];
 
     /**
+     * Check if the user has a specific role.
+     */
+    public function hasRole($role)
+    {
+        return strtolower($this->role) === strtolower($role);
+    }
+
+    /**
      * The attributes that should be hidden for serialization.
      *
      * @var array<int, string>
