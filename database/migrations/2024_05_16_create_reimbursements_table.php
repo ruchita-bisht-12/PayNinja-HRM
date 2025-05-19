@@ -18,12 +18,22 @@ return new class extends Migration
             $table->date('expense_date');
             $table->string('receipt_path')->nullable();
             $table->enum('status', ['pending', 'reporter_approved', 'admin_approved', 'rejected'])->default('pending');
+            
+            // Reporter approval fields
             $table->text('reporter_remarks')->nullable();
-            $table->text('admin_remarks')->nullable();
-            $table->foreignId('reporter_id')->nullable()->constrained('users')->onDelete('set null');
-            $table->foreignId('admin_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('reporter_id')->nullable()->constrained('team_members', 'employee_id')->onDelete('set null');
             $table->timestamp('reporter_approved_at')->nullable();
+            
+            // Admin approval fields
+            $table->text('admin_remarks')->nullable();
+            $table->foreignId('admin_id')->nullable()->constrained('team_members', 'employee_id')->onDelete('set null');
             $table->timestamp('admin_approved_at')->nullable();
+            
+            // Rejection fields
+            $table->text('remarks')->nullable();
+            $table->foreignId('rejected_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->timestamp('rejected_at')->nullable();
+            
             $table->timestamps();
             $table->softDeletes();
         });

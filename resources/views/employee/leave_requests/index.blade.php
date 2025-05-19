@@ -95,7 +95,17 @@
                                             <td>{{ $request->end_date->format('Y-m-d') }}</td>
                                             <td>{{ $request->total_days }}</td>
                                             <td>
-                                                <span class="badge badge-{{ $request->status_color }}">
+                                                @php
+                                                    $statusColors = [
+                                                        'pending' => 'warning',
+                                                        'approved' => 'success',
+                                                        'rejected' => 'danger',
+                                                        'cancelled' => 'secondary',
+                                                        'in review' => 'info',
+                                                    ];
+                                                    $badgeColor = $statusColors[strtolower($request->status)] ?? 'primary';
+                                                @endphp
+                                                <span class="badge badge-{{ $badgeColor }}">
                                                     {{ ucfirst($request->status) }}
                                                 </span>
                                             </td>

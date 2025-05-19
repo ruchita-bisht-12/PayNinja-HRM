@@ -1,0 +1,343 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="container mt-5">
+    <div class="row justify-content-center">
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Reimbursement Details</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Employee:</label>
+                            <p>{{ $reimbursement->employee->name ?? 'N/A' }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Amount:</label>
+                            <p>{{ $reimbursement->amount }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Title:</label>
+                            <p>{{ $reimbursement->title }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Description:</label>
+                            <p>{{ $reimbursement->description }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Expense Date:</label>
+                            <p>{{ \Carbon\Carbon::parse($reimbursement->expense_date)->format('M d, Y') }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Status:</label>
+                            @php
+                                $statusColors = [
+                                    'pending' => 'warning',
+                                    'reporter_approved' => 'info',
+                                    'admin_approved' => 'success',
+                                    'approved' => 'success',
+                                    'rejected' => 'danger'
+                                ];
+                                $statusText = [
+                                    'pending' => 'Pending',
+                                    'reporter_approved' => 'Approved by Reporter',
+                                    'admin_approved' => 'Approved by Admin',
+                                    'approved' => 'Approved',
+                                    'rejected' => 'Rejected'
+                                ];
+                            @endphp
+                            <span class="badge bg-{{ $statusColors[$reimbursement->status] ?? 'secondary' }}">
+                                {{ $statusText[$reimbursement->status] ?? ucfirst($reimbursement->status) }}
+                            </span>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Created At:</label>
+                            <p>{{ $reimbursement->created_at->format('Y-m-d H:i:s') }}</p>
+                        </div>
+                        
+                        @if($reimbursement->status === 'approved')
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Admin Remarks:</label>
+                                <p>{{ $reimbursement->admin_remarks }}</p>
+                            </div>
+                        @endif
+                        
+                        @if($reimbursement->reporter_remarks)
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Reporter Remarks:</label>
+                                <p>{{ $reimbursement->reporter_remarks }}</p>
+                            </div>
+                        @endif
+                        
+                        @if($reimbursement->status === 'rejected')
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Rejection Reason:</label>
+                                <p>{{ $reimbursement->remarks }}</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h4>Actions</h4>
+                    </div>
+                    <div class="card-body">
+                        <a href="{{ route('reimbursements.index') }}" class="btn btn-primary mb-2">Back to List</a>
+                        
+                        @php
+                            $user = Auth::user();
+                            $isAdmin = $user->hasRole('admin');
+                            $isReporter = $reimbursement->reporter_id && $user->id === $reimbursement->reporter->user_id;
+                            
+                            // Admin can approve if status is pending or reporter_approved
+                            // Reporter can only approve if status is pending
+                            $canApprove = ($isAdmin && in_array($reimbursement->status, ['pending', 'reporter_approved'])) || 
+                                        ($isReporter && $reimbursement->status === 'pending');
+                                        
+                            $canReject = ($isAdmin || $isReporter) && 
+                                        in_array($reimbursement->status, ['pending', 'reporter_approved']);
+                        @endphp
+
+                        @if($canApprove)
+                            <button type="button" class="btn btn-success mb-2" data-bs-toggle="modal" data-bs-target="#approveModal">
+                                <i class="fas fa-check-circle me-1"></i>
+                                {{ $isAdmin ? 'Approve as Admin' : 'Approve as Reporter' }}
+                            </button>
+                        @endif
+
+                        <!-- Approve Modal -->
+                        <div class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-success text-white">
+                                        <h5 class="modal-title">
+                                            <i class="fas fa-check-circle me-2"></i>Approve Reimbursement
+                                        </h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <form id="approveForm" action="{{ route($isReporter ? 'reimbursements.approve-reporter' : 'reimbursements.approve', 
+                                              ['reimbursement' => $reimbursement->id]) }}" 
+                                          method="POST">
+                                        @csrf
+                                        <div class="modal-body">
+                                            <div class="alert alert-info">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                Please provide any additional remarks for this approval.
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="approvalRemarks" class="form-label">Remarks <span class="text-danger">*</span></label>
+                                                <textarea name="remarks" id="approvalRemarks" 
+                                                          class="form-control" 
+                                                          rows="3" 
+                                                          placeholder="Enter approval remarks..." 
+                                                          required></textarea>
+                                                <div class="invalid-feedback">Please provide remarks for approval.</div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                <i class="fas fa-times me-1"></i> Cancel
+                                            </button>
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-check-circle me-1"></i> Confirm Approval
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        @if($canReject)
+                            <button type="button" class="btn btn-danger mb-2" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                                <i class="fas fa-ban me-1"></i> Reject
+                            </button>
+                        @endif
+                        
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div class="modal fade" id="rejectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-times-circle me-2"></i>Reject Reimbursement
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="rejectForm" action="{{ route('reimbursements.reject', ['reimbursement' => $reimbursement->id]) }}" method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Please provide a clear reason for rejecting this reimbursement.
+                        </div>
+                        <div class="mb-3">
+                            <label for="rejectionRemarks" class="form-label">Reason for Rejection <span class="text-danger">*</span></label>
+                            <textarea name="remarks" id="rejectionRemarks" 
+                                      class="form-control" 
+                                      rows="3" 
+                                      placeholder="Enter reason for rejection..." 
+                                      required></textarea>
+                            <div class="invalid-feedback">Please provide a reason for rejection.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-ban me-1"></i> Reject
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+@endsection
+
+@section('scripts')
+<script>
+    $(document).ready(function() {
+        // Add CSRF token to all AJAX requests
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        });
+
+        // Handle approve form submission
+        $(document).on('submit', '#approveForm', function(e) {
+            e.preventDefault();
+            
+            var form = $(this);
+            var submitBtn = form.find('button[type="submit"]');
+            var originalText = submitBtn.html();
+            
+            // Validate form
+            if (!form[0].checkValidity()) {
+                form.addClass('was-validated');
+                return false;
+            }
+            
+            // Disable submit button and show loading state
+            submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...');
+            
+            $.ajax({
+                type: 'POST',
+                url: form.attr('action'),
+                data: form.serialize(),
+                success: function(response) {
+                    // Show success message
+                    showAlert('success', response.message || 'Reimbursement approved successfully');
+                    // Close modal
+                    $('#approveModal').modal('hide');
+                    // Reload the page after a short delay
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1500);
+                },
+                error: function(xhr) {
+                    var errorMessage = xhr.responseJSON && xhr.responseJSON.message 
+                        ? xhr.responseJSON.message 
+                        : 'An error occurred while approving the reimbursement.';
+                    showAlert('danger', errorMessage);
+                },
+                complete: function() {
+                    // Re-enable submit button
+                    submitBtn.prop('disabled', false).html(originalText);
+                }
+            });
+        });
+
+        // Handle reject form submission
+        $(document).on('submit', '#rejectForm', function(e) {
+            e.preventDefault();
+            
+            var form = $(this);
+            var submitBtn = form.find('button[type="submit"]');
+            var originalText = submitBtn.html();
+            
+            // Validate form
+            if (!form[0].checkValidity()) {
+                form.addClass('was-validated');
+                return false;
+            }
+            
+            // Disable submit button and show loading state
+            submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...');
+            
+            $.ajax({
+                type: 'POST',
+                url: form.attr('action'),
+                data: form.serialize(),
+                success: function(response) {
+                    // Show success message
+                    showAlert('success', response.message || 'Reimbursement rejected successfully');
+                    // Close modal
+                    $('#rejectModal').modal('hide');
+                    // Reload the page after a short delay
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1500);
+                },
+                error: function(xhr) {
+                    var errorMessage = xhr.responseJSON && xhr.responseJSON.message 
+                        ? xhr.responseJSON.message 
+                        : 'An error occurred while rejecting the reimbursement.';
+                    showAlert('danger', errorMessage);
+                },
+                complete: function() {
+                    // Re-enable submit button
+                    submitBtn.prop('disabled', false).html(originalText);
+                }
+            });
+        });
+
+        // Clear form and reset validation when modal is hidden
+        $('.modal').on('hidden.bs.modal', function() {
+            $(this).find('form')[0].reset();
+            $(this).find('form').removeClass('was-validated');
+            $(this).find('.is-invalid').removeClass('is-invalid');
+            $(this).find('.invalid-feedback').remove();
+        });
+    });
+
+    // Helper function to show alerts
+    function showAlert(type, message) {
+        // Remove any existing alerts
+        $('.alert-dismissible').remove();
+        
+        // Create and show the alert
+        var alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>`;
+        
+        // Add the alert to the top of the content
+        $('.container.mt-5').prepend(alertHtml);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(function() {
+            $('.alert-dismissible').fadeOut(300, function() {
+                $(this).remove();
+            });
+        }, 5000);
+    }
+</script>
+@endsection

@@ -44,7 +44,17 @@
                                 <div class="form-group">
                                     <label>Status</label>
                                     <p class="form-control-static">
-                                        <span class="badge badge-{{ $leaveRequest->status_color }}">
+                                        @php
+                                            $statusColors = [
+                                                'pending' => 'warning',
+                                                'approved' => 'success',
+                                                'rejected' => 'danger',
+                                                'cancelled' => 'secondary',
+                                                'in review' => 'info',
+                                            ];
+                                            $badgeColor = $statusColors[strtolower($leaveRequest->status)] ?? 'primary';
+                                        @endphp
+                                        <span class="badge badge-{{ $badgeColor }}">
                                             {{ ucfirst($leaveRequest->status) }}
                                         </span>
                                     </p>

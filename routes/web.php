@@ -143,6 +143,35 @@ Route::middleware(['auth'])->group(function () {
         Route::get('leave-balances/history', [LeaveBalanceController::class, 'history'])->name('leave-balances.history');
     });
 
-    // Routes here
-        
+    // Reimbursement Routes
+    Route::prefix('reimbursements')->name('reimbursements.')->group(function () {
+        Route::get('/', [ReimbursementController::class, 'index'])->name('index');
+        Route::get('/create', [ReimbursementController::class, 'create'])->name('create');
+        Route::post('/', [ReimbursementController::class, 'store'])->name('store');
+        Route::get('/{reimbursement}', [ReimbursementController::class, 'show'])->name('show');
+        Route::post('/{reimbursement}/approve', [ReimbursementController::class, 'approve'])->name('approve');
+        Route::post('/{reimbursement}/approve/reporter', [ReimbursementController::class, 'approveReporter'])->name('approve.reporter');
+        Route::post('/{reimbursement}/reject', [ReimbursementController::class, 'reject'])->name('reject');
+        Route::get('/pending', [ReimbursementController::class, 'pending'])->name('pending');
     });
+
+    // Company Admin Routes
+    Route::middleware(['role:company_admin'])->prefix('company-admin')->name('company-admin.')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [\App\Http\Controllers\CompanyAdminController::class, 'dashboard'])->name('dashboard');
+
+        // Module Access Management
+        Route::get('/module-access', [\App\Http\Controllers\CompanyAdminController::class, 'moduleAccess'])->name('module-access.index');
+        Route::put('/module-access', [\App\Http\Controllers\CompanyAdminController::class, 'updateModuleAccess'])->name('module-access.update');
+
+        // Employee Management
+        Route::get('/employees', [\App\Http\Controllers\CompanyAdminController::class, 'employees'])->name('employees.index');
+        Route::get('/employees/create', [\App\Http\Controllers\CompanyAdminController::class, 'createEmployee'])->name('employees.create');
+        Route::post('/employees', [\App\Http\Controllers\CompanyAdminController::class, 'storeEmployee'])->name('employees.store');
+        Route::put('/employees/{employee}/role', [\App\Http\Controllers\CompanyAdminController::class, 'updateEmployeeRole'])->name('employees.update-role');
+
+        // Company Settings
+        Route::get('/settings', [\App\Http\Controllers\CompanyAdminController::class, 'settings'])->name('settings.index');
+        Route::put('/settings', [\App\Http\Controllers\CompanyAdminController::class, 'updateSettings'])->name('settings.update');
+    });
+}); // End of auth middleware group

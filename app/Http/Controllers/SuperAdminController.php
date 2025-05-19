@@ -44,7 +44,7 @@ class SuperAdminController extends Controller
 
         $admin = User::find($validated['admin_id']);
         $admin->company_id = $company->id;
-        $admin->role = 'companyadmin';
+        $admin->role = 'company_admin';
         $admin->save();
 
         return redirect()->route('superadmin.companies.index')
@@ -76,7 +76,7 @@ class SuperAdminController extends Controller
 
         $admin = User::find($validated['admin_id']);
         $admin->company_id = $company->id;
-        $admin->role = 'companyadmin';
+        $admin->role = 'company_admin';
         $admin->save();
 
         return redirect()->route('company-super-admin.companies.index')

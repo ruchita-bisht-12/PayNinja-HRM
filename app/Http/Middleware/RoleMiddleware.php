@@ -30,15 +30,15 @@ class RoleMiddleware
         // Log the user's email and role
         Log::info('Authenticated user: ' . $user->email . ' with role: ' . $user->role);
 
-        // Check if the user has a required role (you might need to define $roles)
-        $roles = ['superadmin', 'admin', 'user', 'employee']; // Define required roles
+        // Define allowed roles
+        $roles = ['superadmin', 'admin', 'company_admin', 'user', 'employee'];
 
         if (!in_array($user->role, $roles)) {
             // Log unauthorized access attempt
             Log::warning('Unauthorized access attempt by user: ' . $user->email . ' with role: ' . $user->role);
 
-            // Redirect to unauthorized page
-            return redirect()->route('unauthorized');
+            // Redirect to home with error message
+            return redirect()->route('home')->with('error', 'You do not have permission to access this page.');
         }
 
         // Allow the request to continue

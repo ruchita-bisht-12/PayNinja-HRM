@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+// Role management
 
 class User extends Authenticatable
 {
@@ -23,13 +24,24 @@ class User extends Authenticatable
         'role',
         'company_id',
     ];
+    
+    /**
+     * Get the user's role name.
+     */
+    public function getRoleNameAttribute()
+    {
+        return $this->role ?? 'No Role';
+    }
 
     /**
-     * Check if the user has a specific role.
+     * Check if user has a specific role.
      */
     public function hasRole($role)
     {
-        return strtolower($this->role) === strtolower($role);
+        if (is_array($role)) {
+            return in_array($this->role, $role);
+        }
+        return $this->role === $role;
     }
 
     /**
@@ -58,12 +70,37 @@ class User extends Authenticatable
     {
         return $this->hasOne(EmployeeDetail::class);
     }
+
+    /**
+     * Get the employee record associated with the user.
+     */
+    public function employee()
+    {
+        return $this->hasOne(Employee::class);
+    }
+
     /**
      * Get the company that the user belongs to.
+     * This uses the direct company relationship
      */
     public function company()
     {
         return $this->belongsTo(Company::class);
+    }
+    
+    /**
+     * Get the company through employee relationship
+     */
+    public function employeeCompany()
+    {
+        return $this->hasOneThrough(
+            Company::class,
+            Employee::class,
+            'user_id', // Foreign key on employees table
+            'id', // Foreign key on companies table
+            'id', // Local key on users table
+            'company_id' // Local key on employees table
+        );
     }
     public function department()
 {

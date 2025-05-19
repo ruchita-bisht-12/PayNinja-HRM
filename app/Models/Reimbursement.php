@@ -24,7 +24,10 @@ class Reimbursement extends Model
         'reporter_id',
         'admin_id',
         'reporter_approved_at',
-        'admin_approved_at'
+        'admin_approved_at',
+        'remarks',
+        'rejected_by',
+        'rejected_at'
     ];
 
     protected $casts = [

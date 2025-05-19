@@ -104,18 +104,28 @@ class EmployeeController extends Controller
 
     public function listColleagues()
     {
-        $currentUser = auth()->user();
+        $currentUser = auth()->user()->load('employeeCompany');
         $colleagues = collect(); // Default to an empty collection
         $companyName = 'N/A';
 
-        if ($currentUser && $currentUser->company_id) {
-            if ($currentUser->company) {
-                $companyName = $currentUser->company->name;
+        // Get company through employee relationship if it exists
+        if ($currentUser->employeeCompany) {
+            $companyName = $currentUser->employeeCompany->name;
+            $colleagues = User::whereHas('employee', function($query) use ($currentUser) {
+                $query->where('company_id', $currentUser->employee->company_id);
+            })->with('employee')
+            ->orderBy('name')
+            ->get();
+        } 
+        // Fallback to direct company relationship
+        elseif ($currentUser->company_id) {
+            $company = $currentUser->company;
+            if ($company) {
+                $companyName = $company->name;
+                $colleagues = User::where('company_id', $currentUser->company_id)
+                    ->orderBy('name')
+                    ->get();
             }
-
-            $colleagues = User::where('company_id', $currentUser->company_id)
-                                ->orderBy('name')
-                                ->get();
         }
 
         return view('employee.colleagues', compact('colleagues', 'currentUser', 'companyName'));
