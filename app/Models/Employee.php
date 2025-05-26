@@ -108,6 +108,52 @@ class Employee extends Model
     }
 
     /**
+     * Get the employee's shifts.
+     */
+    public function shifts()
+    {
+        return $this->hasMany(EmployeeShift::class);
+    }
+
+    /**
+     * Get the employee's current shift.
+     */
+    public function currentShift()
+    {
+        return $this->hasOne(EmployeeShift::class)
+            ->where(function ($query) {
+                $query->whereNull('end_date')
+                      ->orWhere('end_date', '>=', now()->toDateString());
+            })
+            ->where('start_date', '<=', now()->toDateString())
+            ->orderBy('start_date', 'desc');
+    }
+
+    /**
+     * Get the employee's attendance records.
+     */
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    /**
+     * Get the employee's attendance logs.
+     */
+    public function attendanceLogs()
+    {
+        return $this->hasMany(AttendanceLog::class);
+    }
+
+    /**
+     * Get the employee's attendance correction requests.
+     */
+    public function attendanceCorrections()
+    {
+        return $this->hasManyThrough(AttendanceCorrection::class, Attendance::class);
+    }
+
+    /**
      * Get the leave balance for a specific leave type and year.
      */
     public function getLeaveBalance($leaveTypeId, $year = null)

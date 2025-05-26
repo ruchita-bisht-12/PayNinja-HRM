@@ -21,6 +21,9 @@
     
     <!-- jQuery 3.6.0 -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Google Maps API will be loaded by the component when needed -->
+    @stack('google-maps')
 
     <!-- Custom CSS Files -->
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
@@ -52,6 +55,9 @@
 
     <!-- Bootstrap 5 JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Custom JS Libraries -->
     <script src="{{ asset('library/jquery.nicescroll/dist/jquery.nicescroll.min.js') }}"></script>
@@ -68,11 +74,16 @@
     <!-- Test script -->
     <script>
         console.log('Layout scripts loaded');
-        // Test if jQuery is available
+        // Test if jQuery and SweetAlert2 are available
         if (typeof jQuery !== 'undefined') {
             console.log('jQuery version in layout:', jQuery.fn.jquery);
         } else {
             console.error('jQuery is not loaded in layout!');
+        }
+        if (typeof Swal !== 'undefined') {
+            console.log('SweetAlert2 is loaded');
+        } else {
+            console.error('SweetAlert2 is not loaded!');
         }
     </script>
 </body>

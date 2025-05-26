@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Attendance Report - {{ $month }}</title>
+    <style>
+        body {
+            font-family: DejaVu Sans, sans-serif;
+            font-size: 12px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #333;
+        }
+        .header p {
+            margin: 5px 0 0;
+            color: #666;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: right;
+            font-size: 11px;
+            color: #666;
+        }
+        .summary {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .summary h4 {
+            margin-top: 0;
+            color: #333;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .summary-label {
+            font-weight: bold;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Attendance Report</h1>
+        <p>Employee: {{ $employee->user->name }}</p>
+        <p>Employee ID: {{ $employee->employee_id }}</p>
+        <p>Department: {{ $employee->department->name ?? 'N/A' }}</p>
+        <p>Month: {{ \Carbon\Carbon::parse($month)->format('F Y') }}</p>
+        <p>Generated on: {{ now()->format('d M Y h:i A') }}</p>
+    </div>
+
+    <div class="summary">
+        <h4>Monthly Summary</h4>
+        <div class="summary-row">
+            <span class="summary-label">Total Working Days:</span>
+            <span>{{ $monthlySummary['total_working_days'] ?? 0 }}</span>
+        </div>
+        <div class="summary-row">
+            <span class="summary-label">Days Worked:</span>
+            <span>{{ $monthlySummary['days_worked'] ?? 0 }}</span>
+        </div>
+        <div class="summary-row">
+            <span class="summary-label">Present:</span>
+            <span>{{ $monthlySummary['present'] ?? 0 }}</span>
+        </div>
+        <div class="summary-row">
+            <span class="summary-label">Absent:</span>
+            <span>{{ $monthlySummary['absent'] ?? 0 }}</span>
+        </div>
+        <div class="summary-row">
+            <span class="summary-label">Late:</span>
+            <span>{{ $monthlySummary['late'] ?? 0 }}</span>
+        </div>
+        <div class="summary-row">
+            <span class="summary-label">On Leave:</span>
+            <span>{{ $monthlySummary['on_leave'] ?? 0 }}</span>
+        </div>
+        <div class="summary-row">
+            <span class="summary-label">Half Day:</span>
+            <span>{{ $monthlySummary['half_day'] ?? 0 }}</span>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Day</th>
+                <th>Status</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Working Hours</th>
+                <th>Remarks</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($attendances as $attendance)
+            <tr>
+                <td>{{ $attendance->date->format('d-m-Y') }}</td>
+                <td>{{ $attendance->date->format('l') }}</td>
+                <td>{{ $attendance->status }}</td>
+                <td>{{ $attendance->check_in ? \Carbon\Carbon::parse($attendance->check_in)->format('h:i A') : 'N/A' }}</td>
+                <td>{{ $attendance->check_out ? \Carbon\Carbon::parse($attendance->check_out)->format('h:i A') : 'N/A' }}</td>
+                <td>
+                    @if($attendance->check_in && $attendance->check_out)
+                        @php
+                            $start = \Carbon\Carbon::parse($attendance->check_in);
+                            $end = \Carbon\Carbon::parse($attendance->check_out);
+                            $hours = $end->diffInMinutes($start) / 60;
+                        @endphp
+                        {{ number_format($hours, 2) }} hrs
+                    @else
+                        N/A
+                    @endif
+                </td>
+                <td>{{ $attendance->remarks ?? 'N/A' }}</td>
+            </tr>
+            @empty
+            <tr>
+                <td colspan="7" class="text-center">No attendance records found for this month.</td>
+            </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p>Generated by {{ auth()->user()->name }} on {{ now()->format('d M Y h:i A') }}</p>
+    </div>
+</body>
+</html>

@@ -13,6 +13,8 @@ use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\LeaveBalanceController;
 use App\Http\Controllers\ReimbursementController;
+use App\Http\Controllers\Employee\AttendanceController as EmployeeAttendanceController;
+use App\Http\Controllers\Admin\AttendanceController as AdminAttendanceController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -34,6 +36,50 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/hakakses/{user}/edit', [App\Http\Controllers\HakaksesController::class, 'edit'])->name('hakakses.edit');
         Route::put('/hakakses/{user}', [App\Http\Controllers\HakaksesController::class, 'update'])->name('hakakses.update');
         Route::delete('/hakakses/{user}', [App\Http\Controllers\HakaksesController::class, 'destroy'])->name('hakakses.delete');
+    });
+
+    // Attendance Management
+    Route::prefix('attendance')->name('attendance.')->group(function () {
+        Route::get('/', [EmployeeAttendanceController::class, 'dashboard'])->name('dashboard');
+        Route::get('/check-in-out', [EmployeeAttendanceController::class, 'checkInOut'])->name('check-in');
+        Route::get('/my-attendance', [EmployeeAttendanceController::class, 'myAttendance'])->name('my-attendance');
+        
+        // Export routes
+        Route::get('/export', [EmployeeAttendanceController::class, 'exportAttendance'])->name('export');
+        Route::get('/export-pdf', [EmployeeAttendanceController::class, 'exportAttendancePdf'])->name('exportPdf');
+        
+        // API endpoints for check-in/out
+        Route::post('/check-in', [EmployeeAttendanceController::class, 'checkIn'])->name('check-in.post');
+        Route::post('/check-out', [EmployeeAttendanceController::class, 'checkOut'])->name('check-out.post');
+        Route::get('/summary', [EmployeeAttendanceController::class, 'myAttendanceSummary'])->name('summary');
+        Route::get('/check-location', [EmployeeAttendanceController::class, 'checkLocation'])->name('check-location');
+        
+        // Get geolocation settings
+        Route::get('/geolocation-settings', [EmployeeAttendanceController::class, 'getGeolocationSettings'])
+            ->name('geolocation-settings');
+    });
+
+    // Admin Attendance Management
+    Route::middleware(['role:admin'])->prefix('admin/attendance')->name('admin.attendance.')->group(function () {
+        Route::get('/', [AdminAttendanceController::class, 'index'])->name('index');
+        Route::get('/summary', [AdminAttendanceController::class, 'summary'])->name('summary');
+        Route::post('/', [AdminAttendanceController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [AdminAttendanceController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [AdminAttendanceController::class, 'update'])->name('update');
+        Route::delete('/{id}', [AdminAttendanceController::class, 'destroy'])->name('destroy');
+        Route::post('/import', [AdminAttendanceController::class, 'import'])->name('import');
+        Route::get('/export', [AdminAttendanceController::class, 'export'])->name('export');
+        Route::get('/template', [AdminAttendanceController::class, 'template'])->name('template');
+        
+        // Attendance Settings
+        Route::get('/settings', [\App\Http\Controllers\Admin\AttendanceSettingController::class, 'index'])
+            ->name('settings');
+        Route::get('/settings/view', [\App\Http\Controllers\Admin\AttendanceSettingController::class, 'show'])
+            ->name('settings.view');
+        Route::match(['post', 'put'], '/settings', [\App\Http\Controllers\Admin\AttendanceSettingController::class, 'update'])
+            ->name('settings.update');
+        Route::get('/api/office-timings', [\App\Http\Controllers\Admin\AttendanceSettingController::class, 'getOfficeTimings'])
+            ->name('api.office-timings');
     });
 
     // Employee Leave Management
@@ -67,7 +113,18 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('companies', SuperAdminController::class)->except(['show']);
     });
 
-    // Admin Routes
+    // Shift Management
+    Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+        Route::resource('shifts', '\App\Http\Controllers\Admin\ShiftController');
+        
+        // Additional shift routes
+        Route::get('shifts/{shift}/assign', '\App\Http\Controllers\Admin\ShiftController@showAssignForm')
+            ->name('shifts.assign.show');
+        Route::post('shifts/{shift}/assign', '\App\Http\Controllers\Admin\ShiftController@assignShift')
+            ->name('shifts.assign');
+});
+
+// Admin Routes
     Route::middleware(['role:admin'])->prefix('company')->name('company.')->group(function () {
         // Employee Management
         Route::get('companies/{companyId}/employees', [EmployeeController::class, 'index'])->name('employees.index');
@@ -121,7 +178,34 @@ Route::middleware(['auth'])->group(function () {
         Route::get('leave-balances/export', [LeaveBalanceController::class, 'export'])->name('leave-balances.export');
     });
 
-    // Employee Routes
+    // Debug route for attendance data
+Route::get('/debug/attendance', function() {
+    $user = \App\Models\User::first();
+    $employee = $user->employee;
+    $month = now()->format('Y-m');
+    
+    $attendances = $employee->attendances()
+        ->whereYear('date', '=', date('Y', strtotime($month)))
+        ->whereMonth('date', '=', date('m', strtotime($month)))
+        ->orderBy('date', 'desc')
+        ->get();
+    
+    return response()->json([
+        'employee_id' => $employee->id,
+        'month' => $month,
+        'total_attendances' => $attendances->count(),
+        'attendances' => $attendances->map(function($att) {
+            return [
+                'date' => $att->date,
+                'status' => $att->status,
+                'check_in' => $att->check_in,
+                'check_out' => $att->check_out
+            ];
+        })
+    ]);
+});
+
+// Employee Routes
     Route::middleware(['role:user,employee'])->prefix('employee')->name('employee.')->group(function () {
         // Profile
         Route::get('profile', [EmployeeController::class, 'show'])->name('profile');

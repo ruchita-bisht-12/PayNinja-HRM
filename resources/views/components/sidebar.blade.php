@@ -33,6 +33,17 @@
         <a class="nav-link" href="{{ route('employee.colleagues') }}"><i class="fas fa-users"></i> <span>My Colleagues</span></a>
     </li>
     
+    <li class="menu-header">Attendance</li>
+    <li class="{{ Request::is('attendance') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('attendance.dashboard') }}"><i class="fas fa-clock"></i> <span>Attendance Dashboard</span></a>
+    </li>
+    <li class="{{ Request::is('attendance/check-in-out') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('attendance.check-in') }}"><i class="fas fa-sign-in-alt"></i> <span>Check In/Out</span></a>
+    </li>
+    <li class="{{ Request::is('attendance/my-attendance') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('attendance.my-attendance') }}"><i class="fas fa-calendar-check"></i> <span>My Attendance</span></a>
+    </li>
+    
     <li class="menu-header">Leave Management</li>
     <li class="{{ Request::is('leave-management/leave-requests') && !Request::is('leave-management/leave-requests/create') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('leave-management.leave-requests.index') }}"><i class="fas fa-clipboard-list"></i> <span>My Leave Requests</span></a>
@@ -82,6 +93,26 @@
                 <a class="nav-link" href="{{ route('company.teams.index', ['companyId' => Auth::user()->company_id]) }}"><i class="fas fa-users-cog"></i> <span>Manage Teams</span></a>
             </li>
 
+            <li class="menu-header">Attendance Management</li>
+            <li class="{{ Request::is('admin/attendance') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('admin.attendance.index') }}"><i class="fas fa-user-clock"></i> <span>Manage Attendance</span></a>
+            </li>
+            <li class="{{ Request::is('admin/attendance/summary') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('admin.attendance.summary') }}"><i class="fas fa-chart-pie"></i> <span>Attendance Summary</span></a>
+            </li>
+            <li class="{{ Request::is('attendance/check-in-out') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('attendance.check-in') }}"><i class="fas fa-sign-in-alt"></i> <span>Check In/Out</span></a>
+            </li>
+            <li class="{{ Request::is('attendance/my-attendance') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('attendance.my-attendance') }}"><i class="fas fa-calendar-check"></i> <span>My Attendance</span></a>
+            </li>
+            <li class="{{ Request::is('admin/attendance/settings*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('admin.attendance.settings') }}"><i class="fas fa-cog"></i> <span>Attendance Settings</span></a>
+            </li>
+            <li class="{{ Request::is('admin/shifts*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('admin.shifts.index') }}"><i class="fas fa-clock"></i> <span>Manage Shifts</span></a>
+            </li>
+            
             <li class="menu-header">Leave Management</li>
             <li class="{{ Request::is('company/leave-types*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('company.leave-types.index') }}"><i class="fas fa-calendar-alt"></i> <span>Leave Types</span></a>
