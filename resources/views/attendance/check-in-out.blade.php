@@ -50,7 +50,7 @@
                 </div>
                 
                 <!-- Geolocation Status (if enabled) -->
-                @if($settings->enable_geolocation)
+                @if(isset($settings) && $settings->enable_geolocation)
                 <div id="locationStatus" class="alert alert-info mb-4">
                     <i class="bi bi-info-circle-fill me-2"></i>
                     <span>Please update your location before checking in/out</span>

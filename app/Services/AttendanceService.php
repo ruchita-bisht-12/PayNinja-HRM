@@ -28,8 +28,8 @@ class AttendanceService
         //     ->withoutGlobalScopes()
         //     ->first();
 
-        // $companyId = Auth::user()->company_id;
-        $companyId = 1;
+        $companyId = Auth::user()->company_id;
+        // $companyId = 1;
         // dd($companyId);
         $settings = AttendanceSetting::where('company_id', $companyId) // replace $companyId with your actual variable
         ->latest('updated_at')

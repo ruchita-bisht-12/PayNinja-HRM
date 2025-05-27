@@ -36,16 +36,16 @@ class SuperAdminController extends Controller
             'domain' => 'nullable|string',
             'phone' => 'nullable|string',
             'address' => 'nullable|string',
-            'admin_id' => 'required|exists:users,id',
+            // 'admin_id' => 'required|exists:users,id',
         ]);
 
         $validated['created_by'] = Auth::user()->id;
         $company = Company::create($validated);
 
-        $admin = User::find($validated['admin_id']);
-        $admin->company_id = $company->id;
-        $admin->role = 'company_admin';
-        $admin->save();
+        // $admin = User::find($validated['admin_id']);
+        // $admin->company_id = $company->id;
+        // $admin->role = 'company_admin';
+        // $admin->save();
 
         return redirect()->route('superadmin.companies.index')
             ->with('success', 'Company Created Successfully');
@@ -54,8 +54,8 @@ class SuperAdminController extends Controller
     public function edit($id)
     {
         $company = Company::findOrFail($id);
-        $users = User::all();
-        return view('superadmin.companies.edit', compact('company', 'users'));
+        // $users = User::all();
+        return view('superadmin.companies.edit', compact('company'));
     }
 
     public function update(Request $request, $id)
@@ -68,18 +68,18 @@ class SuperAdminController extends Controller
             'domain' => 'nullable|string',
             'phone' => 'nullable|string',
             'address' => 'nullable|string',
-            'admin_id' => 'required|exists:users,id',
+            // 'admin_id' => 'required|exists:users,id',
         ]);
 
         $validated['created_by'] = Auth::user()->id;
         $company->update($validated);
 
-        $admin = User::find($validated['admin_id']);
-        $admin->company_id = $company->id;
-        $admin->role = 'company_admin';
-        $admin->save();
+        // $admin = User::find($validated['admin_id']);
+        // $admin->company_id = $company->id;
+        // $admin->role = 'company_admin';
+        // $admin->save();
 
-        return redirect()->route('company-super-admin.companies.index')
+        return redirect()->route('superadmin.companies.index')
             ->with('success', 'Company Updated Successfully');
     }
 
@@ -87,7 +87,7 @@ class SuperAdminController extends Controller
     {
         $company = Company::findOrFail($id);
         $company->delete();
-        return redirect()->route('company-super-admin.companies.index')
+        return redirect()->route('superadmin.companies.index')
             ->with('success', 'Company Deleted Successfully');
     }
 }
