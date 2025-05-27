@@ -24,18 +24,22 @@
                     Fill in the form below to add a new company.
                 </p>
 
-                <form action="{{ route('superadmin.companies.store') }}" method="POST" enctype="multipart/form-data" id="createCompanyForm">
+                <form action="{{ route('superadmin.companies.store') }}" method="POST" enctype="multipart/form-data"
+                    id="createCompanyForm">
                     @csrf
 
                     <div class="form-group row mb-4">
-                        <label class="col-form-label text-md-right col-12 col-md-3 col-lg-3">Company Name <span class="text-danger">*</span></label>
+                        <label class="col-form-label text-md-right col-12 col-md-3 col-lg-3">Company Name <span
+                                class="text-danger">*</span></label>
                         <div class="col-sm-12 col-md-7">
-                            <input type="text" class="form-control" name="name" value="{{ old('name') }}" required minlength="3" maxlength="255">
+                            <input type="text" class="form-control" name="name" value="{{ old('name') }}" required
+                                minlength="3" maxlength="255">
                         </div>
                     </div>
 
                     <div class="form-group row mb-4">
-                        <label class="col-form-label text-md-right col-12 col-md-3 col-lg-3">Company Email <span class="text-danger">*</span></label>
+                        <label class="col-form-label text-md-right col-12 col-md-3 col-lg-3">Company Email <span
+                                class="text-danger">*</span></label>
                         <div class="col-sm-12 col-md-7">
                             <input type="email" class="form-control" name="email" value="{{ old('email') }}" required>
                         </div>
@@ -52,7 +56,7 @@
                     <div class="form-group row mb-4">
                         <label class="col-form-label text-md-right col-12 col-md-3 col-lg-3">Phone</label>
                         <div class="col-sm-12 col-md-7">
-                            <input type="text" class="form-control" name="phone" value="{{ old('phone') }}">
+                            <input type="text" class="form-control" maxlength="10" name="phone" value="{{ old('phone') }}">
                         </div>
                     </div>
 
@@ -63,18 +67,18 @@
                         </div>
                     </div>
 
-
-                    <div class="form-group row mb-4">
-    <label class="col-form-label text-md-right col-12 col-md-3 col-lg-3">Select Company Admin <span class="text-danger">*</span></label>
-    <div class="col-sm-12 col-md-7">
-        <select name="admin_id" class="form-control" required>
-            <option value="" disabled selected>Select an Admin</option>
-            @foreach($users as $user)
-                <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
-            @endforeach
-        </select>
-    </div>
-</div>
+                    {{-- <div class="form-group row mb-4">
+                        <label class="col-form-label text-md-right col-12 col-md-3 col-lg-3">Select Company Admin <span
+                                class="text-danger">*</span></label>
+                        <div class="col-sm-12 col-md-7">
+                            <select name="admin_id" class="form-control" required>
+                                <option value="" disabled selected>Select an Admin</option>
+                                @foreach ($users as $user)
+                                    <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div> --}}
 
                     <div class="form-group row mb-4">
                         <div class="col-sm-12 col-md-7 offset-md-3">
@@ -89,12 +93,12 @@
 @endsection
 
 @push('scripts')
-<script>
-    document.getElementById('createCompanyForm').addEventListener('submit', function(e) {
-        if (!this.checkValidity()) {
-            e.preventDefault();
-            alert('Please fill out all required fields correctly.');
-        }
-    });
-</script>
+    <script>
+        document.getElementById('createCompanyForm').addEventListener('submit', function(e) {
+            if (!this.checkValidity()) {
+                e.preventDefault();
+                alert('Please fill out all required fields correctly.');
+            }
+        });
+    </script>
 @endpush

@@ -33,7 +33,9 @@ class AttendanceSettingController extends Controller
                 'office_latitude' => '28.629402',
                 'office_longitude' => '77.165363',
                 'geofence_radius' => 100,
-                'company_id' => $companyId
+                'company_id' => $companyId,
+                'weekend_days' => json_encode(['Saturday', 'Sunday']),
+                'created_by' => Auth::user()->id
             ]);
             $settings->save();
         }

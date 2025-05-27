@@ -295,6 +295,7 @@ class CompanyAdminController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'required|email',
                 'phone' => 'required|string|max:20',
+                'website' => 'required|url',
                 'address' => 'required|string'
             ]);
 

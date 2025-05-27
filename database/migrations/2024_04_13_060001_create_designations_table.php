@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             $table->string('title');
             $table->text('description')->nullable();
-            $table->string('level');
+            $table->string('level')->nullable();
             $table->unique(['company_id', 'title']);
             $table->timestamps();
             $table->softDeletes();

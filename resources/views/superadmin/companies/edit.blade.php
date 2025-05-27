@@ -68,7 +68,7 @@
                     <div class="form-group row mb-4">
                         <label class="col-form-label text-md-right col-12 col-md-3 col-lg-3">Phone</label>
                         <div class="col-sm-12 col-md-7">
-                            <input type="text" class="form-control @error('phone') is-invalid @enderror" name="phone" value="{{ old('phone', $company->phone) }}">
+                            <input type="text" class="form-control @error('phone') is-invalid @enderror" name="phone" maxlength="10" value="{{ old('phone', $company->phone) }}">
                             @error('phone')
                                 <div class="invalid-feedback">
                                     {{ $message }}
@@ -89,7 +89,7 @@
                         </div>
                     </div>
 
-                    <div class="form-group row mb-4">
+                    {{-- <div class="form-group row mb-4">
                         <label class="col-form-label text-md-right col-12 col-md-3 col-lg-3">Current Logo</label>
                         <div class="col-sm-12 col-md-7">
                             @if ($company->logo)
@@ -114,7 +114,7 @@
                                 </div>
                             @enderror
                         </div>
-                    </div>
+                    </div> --}}
 
                     <div class="form-group row mb-4">
                         <label class="col-form-label text-md-right col-12 col-md-3 col-lg-3"></label>

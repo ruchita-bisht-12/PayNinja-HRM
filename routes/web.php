@@ -15,6 +15,7 @@ use App\Http\Controllers\LeaveBalanceController;
 use App\Http\Controllers\ReimbursementController;
 use App\Http\Controllers\Employee\AttendanceController as EmployeeAttendanceController;
 use App\Http\Controllers\Admin\AttendanceController as AdminAttendanceController;
+use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     return view('welcome');
@@ -111,6 +112,8 @@ Route::middleware(['auth'])->group(function () {
     // SuperAdmin Routes (Can manage Companies)
     Route::middleware(['role:superadmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
         Route::resource('companies', SuperAdminController::class)->except(['show']);
+        Route::resource('assign-company-admin', \App\Http\Controllers\SuperAdmin\AssignCompanyAdminController::class)->except(['show']);
+        Route::get('assigned-company-admins', [\App\Http\Controllers\SuperAdmin\AssignCompanyAdminController::class, 'index'])->name('assigned-company-admins.index');
     });
 
     // Shift Management
