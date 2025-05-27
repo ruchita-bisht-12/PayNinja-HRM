@@ -145,10 +145,13 @@ class ReimbursementController extends Controller
 
             // Check user role from the role column
             $isAdmin = $user->role === 'admin';
+            $isCompanyAdmin = $user->hasRole('company_admin');
+            
             \Log::debug('User role check', [
                 'user_id' => $user->id, 
                 'role' => $user->role,
-                'is_admin' => $isAdmin
+                'is_admin' => $isAdmin,
+                'is_company_admin' => $isCompanyAdmin
             ]);
             
             // Check if user is the reporter
@@ -156,6 +159,7 @@ class ReimbursementController extends Controller
             \Log::debug('User permissions', [
                 'user_id' => $user->id,
                 'is_admin' => $isAdmin,
+                'is_company_admin' => $isCompanyAdmin,
                 'is_reporter' => $isReporter,
                 'reimbursement_status' => $reimbursement->status
             ]);
@@ -188,19 +192,23 @@ class ReimbursementController extends Controller
                 'remarks' => 'required|string|max:1000',
             ]);
 
-            // Update reimbursement with approval details  htgeynyhj b
-            if ($isAdmin) {
-                // Check if employee exists in team_members table
+            // Update reimbursement with approval details
+            if ($isAdmin || $isCompanyAdmin) {
                 $teamMember = \DB::table('team_members')
                     ->where('employee_id', $employee->id)
                     ->first();
                 
                 if (!$teamMember) {
-                    \Log::error('Employee not found in team_members table', [
-                        'employee_id' => $employee->id,
-                        'user_id' => $user->id
-                    ]);
-                    return redirect()->back()->with('error', 'Your employee record is not properly set up in the system.');
+                    // If no team member record exists, create one for company admins
+                    if ($isCompanyAdmin) {
+                        $teamMember = (object)['employee_id' => $employee->id];
+                    } else {
+                        \Log::error('Employee not found in team_members table', [
+                            'employee_id' => $employee->id,
+                            'user_id' => $user->id
+                        ]);
+                        return redirect()->back()->with('error', 'Your employee record is not properly set up in the system.');
+                    }
                 }
                 
                 $reimbursement->update([
@@ -209,7 +217,7 @@ class ReimbursementController extends Controller
                     'admin_approved_at' => now(),
                     'admin_id' => $teamMember->employee_id
                 ]);
-                $message = 'Reimbursement approved by admin successfully.';
+                $message = 'Reimbursement approved by ' . ($isCompanyAdmin ? 'company admin' : 'admin') . ' successfully.';
             } else if ($isReporter) {
                 $reimbursement->update([
                     'status' => 'reporter_approved',

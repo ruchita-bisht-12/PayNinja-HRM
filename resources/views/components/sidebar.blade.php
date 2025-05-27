@@ -70,6 +70,15 @@
                         <a class="nav-link" href="{{ route('leave-management.leave-requests.calendar') }}"><i
                                 class="fas fa-calendar-alt"></i> <span>Leave Calendar</span></a>
                     </li>
+    
+    <li class="menu-header">Salary</li>
+    <li class="{{ Request::is('employee/salary/details*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('employee.salary.details') }}">
+            <i class="fas fa-money-check-alt"></i>
+            <span>Salary Details</span>
+        </a>
+    </li>
+    
                     <li class="menu-header">Reimbursements</li>
                     <li
                         class="{{ Request::is('reimbursements') && !Request::is('reimbursements/create') ? 'active' : '' }}">
@@ -166,19 +175,32 @@
                                 class="fas fa-calendar-alt"></i> <span>Leave Calendar</span></a>
                     </li>
 
+            <li class="menu-header">Salary Management</li>
+            <li class="{{ Request::is('admin/salary*') && !Request::is('admin/salary/create*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('admin.salary.index') }}">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>Employee Salaries</span>
+                </a>
+            </li>
+            <li class="{{ Request::is('admin/salary/create*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('admin.salary.create') }}">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Add Salary Record</span>
+                </a>
+            </li>
 
-                    <li class="menu-header">Reimbursements</li>
-
-                    <li class="{{ Request::is('reimbursements/create') ? 'active' : '' }}">
-                        <a class="nav-link" href="{{ route('reimbursements.create') }}"><i
-                                class="fas fa-plus-circle"></i> <span>Request Reimbursement</span></a>
-                    </li>
-                    <li
-                        class="{{ Request::is('reimbursements') && !Request::is('reimbursements/create') ? 'active' : '' }}">
-                        <a class="nav-link" href="{{ route('reimbursements.index') }}"><i class="fas fa-tasks"></i>
-                            <span>Pending Approvals</span></a>
-                    </li>
-                @endif
+            <li class="menu-header">Reimbursements</li>
+          
+            <li class="{{ Request::is('reimbursements/create') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('reimbursements.create') }}"><i class="fas fa-plus-circle"></i> <span>Request Reimbursement</span></a>
+            </li>
+            <li class="{{ Request::is('reimbursements') && !Request::is('reimbursements/create') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('reimbursements.index') }}"><i class="fas fa-tasks"></i> <span>Pending Approvals</span></a>
+            </li>
+         
+           
+         
+            @endif
 
 
 

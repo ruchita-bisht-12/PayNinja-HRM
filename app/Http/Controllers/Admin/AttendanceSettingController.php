@@ -35,7 +35,7 @@ class AttendanceSettingController extends Controller
                 'geofence_radius' => 100,
                 'company_id' => $companyId,
                 'weekend_days' => json_encode(['Saturday', 'Sunday']),
-                'created_by' => Auth::user()->id
+                'created_by' => Auth::id()
             ]);
             $settings->save();
         }

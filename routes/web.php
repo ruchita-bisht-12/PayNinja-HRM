@@ -125,9 +125,17 @@ Route::middleware(['auth'])->group(function () {
             ->name('shifts.assign.show');
         Route::post('shifts/{shift}/assign', '\App\Http\Controllers\Admin\ShiftController@assignShift')
             ->name('shifts.assign');
-});
 
-// Admin Routes
+        // Salary Management
+        Route::get('salary', [\App\Http\Controllers\Admin\EmployeeSalaryController::class, 'index'])->name('salary.index');
+        Route::get('salary/create', [\App\Http\Controllers\Admin\EmployeeSalaryController::class, 'create'])->name('salary.create');
+        Route::post('salary', [\App\Http\Controllers\Admin\EmployeeSalaryController::class, 'store'])->name('salary.store');
+        Route::get('salary/{employee}/edit', [\App\Http\Controllers\Admin\EmployeeSalaryController::class, 'edit'])->name('salary.edit');
+        Route::put('salary/{employee}', [\App\Http\Controllers\Admin\EmployeeSalaryController::class, 'update'])->name('salary.update');
+        Route::get('salary/{employee}/show', [\App\Http\Controllers\Admin\EmployeeSalaryController::class, 'show'])->name('salary.show');
+        Route::delete('salary/{employee}', [\App\Http\Controllers\Admin\EmployeeSalaryController::class, 'destroy'])->name('salary.destroy');
+    });
+
     Route::middleware(['role:admin'])->prefix('company')->name('company.')->group(function () {
         // Employee Management
         Route::get('companies/{companyId}/employees', [EmployeeController::class, 'index'])->name('employees.index');
@@ -208,11 +216,18 @@ Route::get('/debug/attendance', function() {
     ]);
 });
 
-// Employee Routes
+    // Employee Routes
     Route::middleware(['role:user,employee'])->prefix('employee')->name('employee.')->group(function () {
         // Profile
         Route::get('profile', [EmployeeController::class, 'show'])->name('profile');
         Route::get('colleagues', [EmployeeController::class, 'listColleagues'])->name('colleagues');
+        // Salary Routes
+        Route::prefix('salary')->name('salary.')->group(function () {
+            Route::get('details', [\App\Http\Controllers\Employee\SalaryController::class, 'details'])->name('details');
+            Route::get('monthly/{year}/{month}', [\App\Http\Controllers\Employee\SalaryController::class, 'monthlyDetails'])
+                ->where(['year' => '[0-9]{4}', 'month' => '0[1-9]|1[0-2]' ])
+                ->name('monthly.details');
+        });
 
         // Leave Requests
         Route::get('leave-requests', [LeaveRequestController::class, 'employeeIndex'])->name('leave-requests.index');

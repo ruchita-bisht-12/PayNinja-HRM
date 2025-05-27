@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
+use App\Models\LeaveRequest;
+use App\Models\EmployeeSalary;
+use App\Models\PayrollRecord;
 
 class Employee extends Model
 {
@@ -100,11 +103,30 @@ class Employee extends Model
     }
 
     /**
-     * Get the leave requests for this employee.
+     * Get all salary records for this employee ordered by effective date.
      */
-    public function leaveRequests()
+    public function salaries()
     {
-        return $this->hasMany(LeaveRequest::class);
+        return $this->hasMany(EmployeeSalary::class, 'employee_id')
+            ->orderBy('effective_from', 'desc');
+    }
+
+    /**
+     * Get the payroll records for this employee.
+     */
+    public function payrollRecords()
+    {
+        return $this->hasMany(PayrollRecord::class);
+    }
+
+    /**
+     * Get the current salary for this employee.
+     */
+    public function currentSalary()
+    {
+        return $this->hasOne(EmployeeSalary::class, 'employee_id')
+            ->where('is_current', true)
+            ->latest('effective_from');
     }
 
     /**
