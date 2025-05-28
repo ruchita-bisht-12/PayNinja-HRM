@@ -21,6 +21,8 @@
     
     <!-- jQuery 3.6.0 -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script src="https://www.unpkg.com/olamaps-web-sdk@latest/dist/olamaps-web-sdk.umd.js"></script>
     
     <!-- Google Maps API will be loaded by the component when needed -->
     @stack('google-maps')
