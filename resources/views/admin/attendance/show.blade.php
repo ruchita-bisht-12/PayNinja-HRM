@@ -18,7 +18,7 @@
                         <div class="row">
                             <!-- Office Timings -->
                             <div class="col-md-6">
-                                <div class="card mb-4">
+                                <div class="card">
                                     <div class="card-header bg-light">
                                         <h6 class="mb-0">Office Timings</h6>
                                     </div>
@@ -26,23 +26,35 @@
                                         <dl class="row mb-0">
                                             <dt class="col-sm-5">Office Start Time:</dt>
                                             <dd class="col-sm-7">
-                                                {{ \Carbon\Carbon::createFromFormat('H:i:s', $settings->office_start_time)->format('h:i A') }}
+                                                @if($settings->office_start_time)
+                                                    {{ \Carbon\Carbon::createFromFormat('H:i:s', $settings->office_start_time)->format('h:i A') }}
+                                                @else
+                                                    <span class="text-muted">Not set</span>
+                                                @endif
                                             </dd>
                                             
                                             <dt class="col-sm-5">Office End Time:</dt>
                                             <dd class="col-sm-7">
-                                                {{ \Carbon\Carbon::createFromFormat('H:i:s', $settings->office_end_time)->format('h:i A') }}
+                                                @if($settings->office_end_time)
+                                                    {{ \Carbon\Carbon::createFromFormat('H:i:s', $settings->office_end_time)->format('h:i A') }}
+                                                @else
+                                                    <span class="text-muted">Not set</span>
+                                                @endif
                                             </dd>
-                                            
-                                            <dt class="col-sm-5">Work Hours (per day):</dt>
-                                            <dd class="col-sm-7">{{ $settings->work_hours }} hours</dd>
                                             
                                             <dt class="col-sm-5">Grace Period:</dt>
                                             <dd class="col-sm-7">
-                                                {{ \Carbon\Carbon::createFromFormat('H:i:s', $settings->grace_period)->format('i') }} minutes
+                                                @if($settings->grace_period)
+                                                    {{ \Carbon\Carbon::createFromFormat('H:i:s', $settings->grace_period)->format('h:i A') }}
+                                                @else
+                                                    <span class="text-muted">Not set</span>
+                                                @endif
                                             </dd>
                                             
-                                            <dt class="col-sm-5">Auto Mark Absent After:</dt>
+                                            <dt class="col-sm-5">Work Hours:</dt>
+                                            <dd class="col-sm-7">{{ $settings->work_hours ?? 'Not set' }} hours</dd>
+                                            
+                                            <dt class="col-sm-5">Auto Mark Absent:</dt>
                                             <dd class="col-sm-7">
                                                 @if($settings->auto_absent_time)
                                                     {{ \Carbon\Carbon::createFromFormat('H:i:s', $settings->auto_absent_time)->format('h:i A') }}
@@ -57,7 +69,7 @@
                             
                             <!-- Location Settings -->
                             <div class="col-md-6">
-                                <div class="card mb-4">
+                                <div class="card">
                                     <div class="card-header bg-light">
                                         <h6 class="mb-0">Location Settings</h6>
                                     </div>
@@ -93,7 +105,7 @@
                             </div>
                             
                             <!-- Additional Settings -->
-                            <div class="col-12">
+                            <div class="col-12 mt-4">
                                 <div class="card">
                                     <div class="card-header bg-light">
                                         <h6 class="mb-0">Additional Settings</h6>
@@ -120,30 +132,6 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        
-                                        @if(!empty($settings->weekend_days) && is_array($settings->weekend_days))
-                                            <div class="mt-3">
-                                                <h6>Weekend Days:</h6>
-                                                <div class="d-flex flex-wrap gap-2">
-                                                    @php
-                                                        $days = [
-                                                            'sunday' => 'Sunday',
-                                                            'monday' => 'Monday',
-                                                            'tuesday' => 'Tuesday',
-                                                            'wednesday' => 'Wednesday',
-                                                            'thursday' => 'Thursday',
-                                                            'friday' => 'Friday',
-                                                            'saturday' => 'Saturday'
-                                                        ];
-                                                    @endphp
-                                                    @foreach($days as $key => $day)
-                                                        <span class="badge {{ in_array($key, $settings->weekend_days) ? 'bg-secondary' : 'bg-light text-dark' }}">
-                                                            {{ $day }}
-                                                        </span>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -163,89 +151,67 @@
 </div>
 
 @if($settings && $settings->enable_geolocation && $settings->office_latitude && $settings->office_longitude)
-    @push('google-maps')
-        <x-google-maps />
-    @endpush
-    
     @push('scripts')
     <script>
-        // This function will be called when Google Maps API is loaded
-        function initMap() {
-            try {
-                const officeLocation = { 
-                    lat: parseFloat({{ $settings->office_latitude }}), 
-                    lng: parseFloat({{ $settings->office_longitude }})
-                };
+        try {
+            // Initialize Ola Maps
+            const olaMaps = new OlaMaps({
+                apiKey: "{{ config('services.krutrim.maps_api_key') }}"
+            });
+
+            // Office location coordinates
+            const officeLocation = [
+                parseFloat('{{ $settings->office_longitude }}'),
+                parseFloat('{{ $settings->office_latitude }}')
+            ];
+
+            // Initialize map
+            const myMap = olaMaps.init({
+                style: "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
+                container: 'map',
+                center: officeLocation,
+                zoom: 15
+            });
+
+            // Add marker and circle after map is loaded
+            myMap.on('load', () => {
+                // Add office marker
+                olaMaps
+                    .addMarker({ offset: [0, -15], anchor: 'bottom', color: 'blue' })
+                    .setLngLat(officeLocation)
+                    .addTo(myMap);
                 
-                // Only initialize the map if the element exists
-                const mapElement = document.getElementById('map');
-                if (!mapElement) return;
-                
-                const map = new google.maps.Map(mapElement, {
-                    zoom: 15,
+                // Add geofence circle
+                olaMaps.addCircle({
                     center: officeLocation,
-                    mapTypeId: 'roadmap',
-                    streetViewControl: false,
-                    fullscreenControl: true
-                });
-                
-                // Add a marker at the office location
-                new google.maps.Marker({
-                    position: officeLocation,
-                    map: map,
-                    title: 'Office Location'
-                });
-                
-                // Add a circle for the geofence radius
-                new google.maps.Circle({
+                    radius: {{ $settings->geofence_radius ?? 100 }},
+                    fillColor: '#4285F4',
+                    fillOpacity: 0.1,
                     strokeColor: '#4285F4',
                     strokeOpacity: 0.8,
-                    strokeWeight: 2,
-                    fillColor: '#4285F4',
-                    fillOpacity: 0.2,
-                    map: map,
-                    center: officeLocation,
-                    radius: {{ $settings->geofence_radius ?? 100 }}
-                });
-                
-                // Handle window resize
-                google.maps.event.addDomListener(window, 'resize', function() {
-                    const center = map.getCenter();
-                    google.maps.event.trigger(map, 'resize');
-                    map.setCenter(center);
-                });
-                
-            } catch (error) {
-                console.error('Error initializing map:', error);
-                const mapElement = document.getElementById('map');
-                if (mapElement) {
-                    mapElement.innerHTML = `
-                        <div class="alert alert-danger m-3">
-                            Error loading map: ${error.message}
-                        </div>`;
-                }
-            }
-        }
-        
-        // Initialize map when Google Maps API is loaded
-        if (window.google && window.google.maps) {
-            initMap();
-        } else if (window.googleMapsLoaded) {
-            initMap();
-        } else {
-            window.addEventListener('google-maps-loaded', initMap);
-            window.addEventListener('google-maps-error', function() {
-                const mapElement = document.getElementById('map');
-                if (mapElement) {
-                    mapElement.innerHTML = `
-                        <div class="alert alert-danger m-3">
-                            Failed to load Google Maps. Please try again later.
-                        </div>`;
-                }
+                    strokeWidth: 2
+                }).addTo(myMap);
             });
+        } catch (error) {
+            console.error('Error initializing map:', error);
+            document.getElementById('map').innerHTML = `
+                <div class="alert alert-danger m-2">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error loading map. Please try again later.
+                </div>
+            `;
         }
     </script>
     @endpush
 @endif
+
+@push('styles')
+<style>
+    #map {
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+</style>
+@endpush
 
 @endsection

@@ -23,7 +23,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('admin.attendance.settings.update') }}" method="POST" id="attendance-settings-form" enctype="multipart/form-data" onsubmit="event.preventDefault(); submitForm(this);">
+                    <form action="{{ route('admin.attendance.settings.update') }}" method="POST" id="attendance-settings-form" enctype="multipart/form-data">
                         @csrf
                         
                         <div class="row mb-4">
@@ -236,22 +236,9 @@
                                         </div>
                                     </div>
                                    
-                                    
                                     <!-- Map Container -->
                                     <div class="mb-3">
                                         <div id="map" style="height: 300px; width: 100%; border: 1px solid #dee2e6; border-radius: 4px;"></div>
-                                        <div class="row mt-2">
-                                            <div class="col-md-6">
-                                                <label class="form-label">Latitude</label>
-                                                <input type="text" class="form-control" id="office_latitude" name="office_latitude" 
-                                                       value="{{ $settings->office_latitude ?? '' }}" readonly>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label">Longitude</label>
-                                                <input type="text" class="form-control" id="office_longitude" name="office_longitude" 
-                                                       value="{{ $settings->office_longitude ?? '' }}" readonly>
-                                            </div>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -348,7 +335,9 @@
         parseFloat('{{ $settings->office_latitude ?? 28.63453194502196 }}')
     ];
 
-    function setLocation(defaultLocation){
+    function setLocation(defaultLocation) {
+        console.log('Setting location:', defaultLocation);
+        
         myMap = olaMaps.init({
             style: "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
             container: 'map',
@@ -366,13 +355,37 @@
             // Attach the drag event
             marker.on('drag', () => {
                 const lngLat = marker.getLngLat();
-                latitudeInput.value = lngLat.lat;
-                longitudeInput.value = lngLat.lng;
+                console.log('Marker dragged to:', lngLat);
+                
+                // Update the input fields with the new coordinates
+                latitudeInput.value = lngLat.lat.toFixed(6);
+                longitudeInput.value = lngLat.lng.toFixed(6);
+
+                // Log the values being set
+                console.log('Setting latitude:', latitudeInput.value);
+                console.log('Setting longitude:', longitudeInput.value);
+            });
+
+            // Also attach dragend event for final position
+            marker.on('dragend', () => {
+                const lngLat = marker.getLngLat();
+                console.log('Marker drag ended at:', lngLat);
+                
+                // Update the input fields with the final coordinates
+                latitudeInput.value = lngLat.lat.toFixed(6);
+                longitudeInput.value = lngLat.lng.toFixed(6);
+
+                // Log the final values
+                console.log('Final latitude:', latitudeInput.value);
+                console.log('Final longitude:', longitudeInput.value);
             });
         });
     }
+    
+    // Initialize map with default location
     setLocation(defaultLocation);
     
+    // Handle get location button click
     if (getLocationBtn) {
         getLocationBtn.addEventListener('click', function() {
             if (!navigator.geolocation) {
@@ -392,13 +405,17 @@
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
                     
-                    if (latitudeInput) latitudeInput.value = lat;
-                    if (longitudeInput) longitudeInput.value = lng;
+                    console.log('Got current location:', { lat, lng });
                     
-                    // Update map if it's already loaded
+                    // Update input fields
+                    latitudeInput.value = lat.toFixed(6);
+                    longitudeInput.value = lng.toFixed(6);
+                    
+                    // Update map
+                    const newPosition = [lng, lat]; // Ola Maps uses [longitude, latitude]
                     if (marker && myMap) {
-                        const newPosition = [parseFloat(lng), parseFloat(lat)];
-                        setLocation(newPosition);
+                        marker.setLngLat(newPosition);
+                        myMap.setCenter(newPosition);
                     }
                     
                     button.disabled = false;
@@ -419,437 +436,125 @@
             );
         });
     }
+
+    // Handle geofence radius change
+    $('#geofence_radius').on('input', function() {
+        $('#radius-value').text(this.value + 'm');
+    });
+
+    // Handle enable geolocation toggle
+    $('#enable_geolocation').change(function() {
+        const geolocationFields = $('#geolocation-fields');
+        if (this.checked) {
+            geolocationFields.slideDown();
+            $('#office_latitude, #office_longitude, #geofence_radius').prop('required', true);
+        } else {
+            geolocationFields.slideUp();
+            $('#office_latitude, #office_longitude, #geofence_radius').prop('required', false);
+        }
+    });
+
+    // Form validation
+    $('#attendance-settings-form').validate({
+        rules: {
+            company_id: 'required',
+            office_start_time: 'required',
+            office_end_time: {
+                required: true,
+                greaterThan: '#office_start_time'
+            },
+            work_hours: {
+                required: true,
+                min: 1,
+                max: 24
+            },
+            late_minutes: {
+                required: true,
+                min: 0
+            },
+            early_leave_minutes: {
+                required: true,
+                min: 0
+            },
+            half_day_minutes: {
+                required: true,
+                min: 0
+            },
+            auto_absent_time: 'required',
+            grace_period: 'required',
+            geofence_radius: {
+                required: '#enable_geolocation:checked',
+                min: 50,
+                max: 5000
+            },
+            office_latitude: {
+                required: '#enable_geolocation:checked',
+                number: true
+            },
+            office_longitude: {
+                required: '#enable_geolocation:checked',
+                number: true
+            }
+        },
+        messages: {
+            office_start_time: 'Please enter office start time',
+            office_end_time: {
+                required: 'Please enter office end time',
+                greaterThan: 'End time must be after start time'
+            },
+            work_hours: {
+                required: 'Please enter work hours',
+                min: 'Work hours must be at least 1 hour',
+                max: 'Work hours cannot exceed 24 hours'
+            },
+            late_minutes: {
+                required: 'Please enter late minutes',
+                min: 'Late minutes cannot be negative'
+            },
+            early_leave_minutes: {
+                required: 'Please enter early leave minutes',
+                min: 'Early leave minutes cannot be negative'
+            },
+            half_day_minutes: {
+                required: 'Please enter half day minutes',
+                min: 'Half day minutes cannot be negative'
+            },
+            auto_absent_time: 'Please enter auto absent time',
+            grace_period: 'Please enter grace period',
+            geofence_radius: {
+                required: 'Please enter geofence radius',
+                min: 'Minimum radius is 50 meters',
+                max: 'Maximum radius is 5000 meters'
+            },
+            office_latitude: {
+                required: 'Please set office location on map',
+                number: 'Latitude must be a valid number'
+            },
+            office_longitude: {
+                required: 'Please set office location on map',
+                number: 'Longitude must be a valid number'
+            },
+            'weekend_days[]': {
+                required: 'Please select at least one weekend day'
+            }
+        },
+        errorElement: 'div',
+        errorPlacement: function(error, element) {
+            error.addClass('invalid-feedback');
+            element.closest('.form-group').append(error);
+        },
+        highlight: function(element, errorClass, validClass) {
+            $(element).addClass('is-invalid');
+        },
+        unhighlight: function(element, errorClass, validClass) {
+            $(element).removeClass('is-invalid');
+        },
+        submitHandler: function(form) {
+            console.log('Form validation passed, submitting...');
+            submitForm(form);
+            return false; // Prevent normal form submission
+        }
+    });
 </script>
 
-
-<script>
-    // // Global variables
-    // let map, marker, circle;
-    
-    // // Make initMap available globally
-    // window.initMap = async function() {
-    //     try {
-    //         // Request needed libraries
-    //         const { Map } = await google.maps.importLibrary('maps');
-    //         const { AdvancedMarkerElement } = await google.maps.importLibrary('marker');
-            
-    //         // Default to New Delhi if no location is set
-    //         const defaultLocation = { 
-    //             lat: parseFloat('{{ $settings->office_latitude ?? 28.6139 }}'), 
-    //             lng: parseFloat('{{ $settings->office_longitude ?? 77.2090 }}')
-    //         };
-            
-    //         const geofenceRadius = parseInt('{{ $settings->geofence_radius ?? 100 }}');
-            
-    //         // Initialize map
-    //         map = new Map(document.getElementById('map'), {
-    //             zoom: 15,
-    //             center: defaultLocation,
-    //             mapId: 'attendance_map',
-    //             mapTypeId: 'roadmap',
-    //             streetViewControl: false,
-    //             fullscreenControl: true
-    //         });
-            
-    //         // Add advanced marker
-    //         marker = new AdvancedMarkerElement({
-    //             map: map,
-    //             position: defaultLocation,
-    //             gmpDraggable: true,
-    //             title: 'Office Location'
-    //         });
-            
-    //         // Initialize map features
-    //         initializeMapFeatures(map, marker, defaultLocation, geofenceRadius);
-            
-    //     } catch (error) {
-    //         console.error('Error initializing map:', error);
-    //         const mapElement = document.getElementById('map');
-    //         if (mapElement) {
-    //             mapElement.innerHTML = 
-    //                 '<div class="alert alert-danger m-3">Error initializing Google Maps. Please check your API key and console for details.</div>';
-    //         }
-    //     }
-    // };
-    
-    // // Function to initialize map features
-    // function initializeMapFeatures(map, marker, defaultLocation, initialRadius) {
-    //     let geofenceRadius = initialRadius;
-        
-    //     // Create circle for geofence
-    //     function updateCircle(center) {
-    //         if (circle) {
-    //             circle.setMap(null);
-    //         }
-            
-    //         circle = new google.maps.Circle({
-    //             strokeColor: '#4285F4',
-    //             strokeOpacity: 0.8,
-    //             strokeWeight: 2,
-    //             fillColor: '#4285F4',
-    //             fillOpacity: 0.2,
-    //             map: map,
-    //             center: center,
-    //             radius: geofenceRadius
-    //         });
-            
-    //         // Update the radius display
-    //         document.getElementById('radius-value').textContent = geofenceRadius + 'm';
-    //     }
-        
-    //     // Update form fields with current position
-    //     function updateFormFields(position) {
-    //         const lat = position.lat ? position.lat : (position.latLng ? position.latLng.lat() : null);
-    //         const lng = position.lng ? position.lng : (position.latLng ? position.latLng.lng() : null);
-            
-    //         if (lat !== null && lng !== null) {
-    //             document.getElementById('office_latitude').value = parseFloat(lat).toFixed(6);
-    //             document.getElementById('office_longitude').value = parseFloat(lng).toFixed(6);
-    //         }
-    //     }
-        
-    //     // Update form fields when marker is dragged
-    //     marker.addListener('dragend', (event) => {
-    //         updateFormFields(event);
-    //         updateCircle(marker.position);
-    //     });
-        
-    //     // Update circle when radius changes
-    //     const radiusInput = document.getElementById('geofence_radius');
-    //     if (radiusInput) {
-    //         radiusInput.addEventListener('input', () => {
-    //             geofenceRadius = parseInt(radiusInput.value);
-    //             updateCircle(marker.position);
-    //         });
-    //     }
-        
-    //     // Initialize form fields and circle
-    //     updateFormFields(defaultLocation);
-    //     updateCircle(defaultLocation);
-        
-    //     // Handle map click to move marker
-    //     map.addListener('click', (event) => {
-    //         const position = {
-    //             lat: event.latLng.lat(),
-    //             lng: event.latLng.lng()
-    //         };
-    //         marker.position = position;
-    //         updateFormFields(position);
-    //         updateCircle(position);
-    //     });
-        
-    //     // Handle window resize
-    //     window.addEventListener('resize', () => {
-    //         google.maps.event.trigger(map, 'resize');
-    //         if (marker && marker.position) {
-    //             map.setCenter(marker.position);
-    //         }
-    //     });
-    // }
-    
-    // // Handle Google Maps API errors
-    // window.gm_authFailure = function() {
-    //     const mapElement = document.getElementById('map');
-    //     if (mapElement) {
-    //         mapElement.innerHTML = 
-    //             '<div class="alert alert-danger m-3">' +
-    //             'Error loading Google Maps. Please check your API key in the .env file.' +
-    //             '</div>';
-    //     }
-    // };
-    
-    // // Load Google Maps API
-    // function loadGoogleMaps() {
-    //     // Check if Google Maps API is already loaded
-    //     if (typeof google === 'object' && typeof google.maps === 'object') {
-    //         if (typeof initMap === 'function') {
-    //             initMap();
-    //         }
-    //         return;
-    //     }
-        
-    //     // Load the Google Maps API
-    //     const script = document.createElement('script');
-    //     script.src = `https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_api_key') }}&loading=async&libraries=marker&callback=initMap`;
-    //     script.async = true;
-    //     script.defer = true;
-    //     script.onerror = function() {
-    //         window.gm_authFailure();
-    //     };
-    //     document.head.appendChild(script);
-    // }
-    
-    // // Initialize the map when the page loads
-    // document.addEventListener('DOMContentLoaded', function() {
-    //     loadGoogleMaps();
-        
-    //     // Existing geolocation toggle and other event listeners
-    //     const enableGeolocation = document.getElementById('enable_geolocation');
-    //     const geolocationFields = document.getElementById('geolocation-fields');
-    //     const getLocationBtn = document.getElementById('get-location');
-    //     const latitudeInput = document.getElementById('office_latitude');
-    //     const longitudeInput = document.getElementById('office_longitude');
-    //     const radiusInput = document.getElementById('geofence_radius');
-    //     const radiusValue = document.getElementById('radius-value');
-
-    //     // Toggle geolocation fields
-    //     if (enableGeolocation && geolocationFields) {
-    //         enableGeolocation.addEventListener('change', function() {
-    //             if (this.checked) {
-    //                 geolocationFields.style.display = 'block';
-    //                 // Make fields required when enabled
-    //                 if (latitudeInput) latitudeInput.required = true;
-    //                 if (longitudeInput) longitudeInput.required = true;
-    //                 if (radiusInput) radiusInput.required = true;
-    //             } else {
-    //                 geolocationFields.style.display = 'none';
-    //                 // Remove required when disabled
-    //                 if (latitudeInput) latitudeInput.required = false;
-    //                 if (longitudeInput) longitudeInput.required = false;
-    //                 if (radiusInput) radiusInput.required = false;
-    //             }
-    //         });
-    //     }
-
-    //     // Update radius value display
-    //     if (radiusInput && radiusValue) {
-    //         radiusValue.textContent = radiusInput.value + 'm';
-    //         radiusInput.addEventListener('input', function() {
-    //             radiusValue.textContent = this.value + 'm';
-    //         });
-    //     }
-
-    //     // Get current location
-    //     if (getLocationBtn) {
-    //         getLocationBtn.addEventListener('click', function() {
-    //             if (!navigator.geolocation) {
-    //                 alert('Geolocation is not supported by your browser');
-    //                 return;
-    //             }
-
-    //             const button = this;
-    //             const originalText = button.innerHTML;
-                
-    //             button.disabled = true;
-    //             button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Getting location...';
-
-    //             navigator.geolocation.getCurrentPosition(
-    //                 function(position) {
-    //                     // Success callback
-    //                     const lat = position.coords.latitude.toFixed(6);
-    //                     const lng = position.coords.longitude.toFixed(6);
-                        
-    //                     if (latitudeInput) latitudeInput.value = lat;
-    //                     if (longitudeInput) longitudeInput.value = lng;
-                        
-    //                     // Update map if it's already loaded
-    //                     if (marker && map) {
-    //                         const newPosition = { lat: parseFloat(lat), lng: parseFloat(lng) };
-    //                         marker.position = newPosition;
-    //                         map.setCenter(newPosition);
-    //                         if (circle) {
-    //                             circle.setCenter(newPosition);
-    //                         }
-    //                     }
-                        
-    //                     button.disabled = false;
-    //                     button.innerHTML = originalText;
-    //                 },
-    //                 function(error) {
-    //                     // Error callback
-    //                     console.error('Error getting location:', error);
-    //                     alert('Error getting your location. Please make sure location services are enabled.');
-    //                     button.disabled = false;
-    //                     button.innerHTML = originalText;
-    //                 },
-    //                 {
-    //                     enableHighAccuracy: true,
-    //                     timeout: 10000,
-    //                     maximumAge: 0
-    //                 }
-    //             );
-    //         });
-    //     }
-    // });
-    
-    // // Handle form submission
-    // function submitForm(form) {
-    //     // Your existing form submission logic here
-    //     form.submit();
-    // }
-</script>
-    // Geolocation functionality is now handled in the main DOMContentLoaded event
-</script>
-
-<script>
-    // Handle form submission with AJAX
-    // function submitForm(form) {
-    //     // Get the form data
-    //     const formData = new FormData(form);
-        
-    //     // Add weekend days as JSON string
-    //     const weekendDays = [];
-    //     document.querySelectorAll('input[name="weekend_days[]"]:checked').forEach(checkbox => {
-    //         weekendDays.push(checkbox.value);
-    //     });
-    //     formData.append('weekend_days_json', JSON.stringify(weekendDays));
-        
-    //     // Show loading state
-    //     const submitBtn = form.querySelector('button[type="submit"]');
-    //     const originalBtnText = submitBtn.innerHTML;
-    //     submitBtn.disabled = true;
-    //     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Saving...';
-        
-    //     // Submit form via AJAX
-    //     fetch(form.action, {
-    //         method: 'POST',
-    //         body: formData,
-    //         headers: {
-    //             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-    //             'X-Requested-With': 'XMLHttpRequest'
-    //         }
-    //     })
-    //     .then(response => response.json())
-    //     .then(data => {
-    //         if (data.success) {
-    //             // Show success message
-    //             Swal.fire({
-    //                 icon: 'success',
-    //                 title: 'Success!',
-    //                 text: data.message || 'Settings saved successfully',
-    //                 timer: 2000,
-    //                 showConfirmButton: false
-    //             });
-                
-    //             // Reload page to reflect changes
-    //             setTimeout(() => {
-    //                 window.location.reload();
-    //             }, 2000);
-    //         } else {
-    //             throw new Error(data.message || 'Failed to save settings');
-    //         }
-    //     })
-    //     .catch(error => {
-    //         console.error('Error:', error);
-    //         Swal.fire({
-    //             icon: 'error',
-    //             title: 'Error!',
-    //             text: error.message || 'Failed to save settings. Please try again.'
-    //         });
-    //     })
-    //     .finally(() => {
-    //         submitBtn.disabled = false;
-    //         submitBtn.innerHTML = originalBtnText;
-    //     });
-    // }
-    
-    // // Initialize time pickers and validation when document is ready
-    // document.addEventListener('DOMContentLoaded', function() {
-    //     // Initialize time pickers with 5-minute steps
-    //     $('input[type="time"]').attr('step', 300);
-        
-    //     // Helper function to convert time string to minutes
-    //     function convertToMinutes(timeString) {
-    //         if (!timeString) return 0;
-    //         const [hours, minutes] = timeString.split(':').map(Number);
-    //         return hours * 60 + minutes;
-    //     }
-        
-    //     // Custom validation rule for end time
-    //     $.validator.addMethod('greaterThan', function(value, element, param) {
-    //         if (!value) return true;
-    //         const startTime = $(param).val();
-    //         if (!startTime) return true;
-            
-    //         // Convert times to minutes for comparison
-    //         const startMinutes = convertToMinutes(startTime);
-    //         const endMinutes = convertToMinutes(value);
-            
-    //         return endMinutes > startMinutes;
-    //     }, 'End time must be after start time');
-        
-    //     // Initialize form validation
-    //     $('#attendance-settings-form').validate({
-    //         rules: {
-    //             company_id: 'required',
-    //             office_start_time: 'required',
-    //             office_end_time: {
-    //                 required: true,
-    //                 greaterThan: '#office_start_time'
-    //             },
-    //             work_hours: {
-    //                 required: true,
-    //                 min: 1,
-    //                 max: 24
-    //             },
-    //             late_minutes: {
-    //                 required: true,
-    //                 min: 0
-    //             },
-    //             early_leave_minutes: {
-    //                 required: true,
-    //                 min: 0
-    //             },
-    //             half_day_minutes: {
-    //                 required: true,
-    //                 min: 0
-    //             },
-    //             auto_absent_time: 'required',
-    //             grace_period: 'required',
-    //             geofence_radius: {
-    //                 required: '#enable_geolocation:checked',
-    //                 min: 50,
-    //                 max: 5000
-    //             }
-    //         },
-    //         messages: {
-    //             office_start_time: 'Please enter office start time',
-    //             office_end_time: {
-    //                 required: 'Please enter office end time',
-    //                 greaterThan: 'End time must be after start time'
-    //             },
-    //             work_hours: {
-    //                 required: 'Please enter work hours',
-    //                 min: 'Work hours must be at least 1 hour',
-    //                 max: 'Work hours cannot exceed 24 hours'
-    //             },
-    //             late_minutes: {
-    //                 required: 'Please enter late minutes',
-    //                 min: 'Late minutes cannot be negative'
-    //             },
-    //             early_leave_minutes: {
-    //                 required: 'Please enter early leave minutes',
-    //                 min: 'Early leave minutes cannot be negative'
-    //             },
-    //             half_day_minutes: {
-    //                 required: 'Please enter half day minutes',
-    //                 min: 'Half day minutes cannot be negative'
-    //             },
-    //             auto_absent_time: 'Please enter auto absent time',
-    //             grace_period: 'Please enter grace period',
-    //             geofence_radius: {
-    //                 required: 'Please enter geofence radius',
-    //                 min: 'Minimum radius is 50 meters',
-    //                 max: 'Maximum radius is 5000 meters'
-    //             }
-    //         },
-    //         errorElement: 'span',
-    //         errorPlacement: function (error, element) {
-    //             error.addClass('invalid-feedback');
-    //             element.closest('.form-group').append(error);
-    //         },
-    //         highlight: function (element, errorClass, validClass) {
-    //             $(element).addClass('is-invalid');
-    //         },
-    //         unhighlight: function (element, errorClass, validClass) {
-    //             $(element).removeClass('is-invalid');
-    //         },
-    //         submitHandler: function(form) {
-    //             // This prevents the default form submission
-    //             // The form is submitted via the submitForm function
-    //             return false;
-    //         }
-    //     });
-    // });
-</script>
 @endpush

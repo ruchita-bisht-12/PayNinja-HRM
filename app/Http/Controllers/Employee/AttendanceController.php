@@ -171,8 +171,6 @@ class AttendanceController extends Controller
      */
     public function checkIn(Request $request)
     {
-
-        // dd($request->all());
         try {
             $user = Auth::user();
             $employee = $user->employee;
@@ -192,7 +190,6 @@ class AttendanceController extends Controller
             
             // Get attendance settings
             $settings = $this->attendanceService->getAttendanceSettings();
-            // dd($settings);
             
             // If location is provided as a string ("lat,lng"), parse it
             if (!$latitude && !$longitude && $location && strpos($location, ',') !== false) {
@@ -258,10 +255,6 @@ class AttendanceController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            \Log::error('Check-in error: ' . $e->getMessage(), [
-    'trace' => $e->getTraceAsString()
-]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while processing your check-in. Please try again.',

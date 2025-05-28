@@ -161,16 +161,19 @@
 @endpush
 
 @push('scripts')
-<script src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google.maps_api_key') }}&libraries=places" async defer></script>
 <script>
 $(document).ready(function() {
     // Global variables
-    let map = null;
+    let myMap = null;
     let marker = null;
-    let geocoder = null;
     let currentPosition = null;
     let isLocationValid = false;
     let geolocationRequired = {{ $settings->enable_geolocation ? 'true' : 'false' }};
+    
+    // Initialize Ola Maps
+    const olaMaps = new OlaMaps({
+        apiKey: "{{ config('services.krutrim.maps_api_key') }}"
+    });
     
     // Update current time
     function updateCurrentTime() {
@@ -217,70 +220,48 @@ $(document).ready(function() {
         }, 5000);
     }
     
-    // Initialize Google Maps
-    function initMap() {
-        if (!window.google || !window.google.maps) {
-            console.error('Google Maps API not loaded');
-            return;
-        }
-        
-        // Create geocoder instance
-        geocoder = new google.maps.Geocoder();
-        
-        // Default position (will be updated with user's location)
-        const defaultPosition = {
-            lat: {{ $settings->office_latitude ?? 0 }},
-            lng: {{ $settings->office_longitude ?? 0 }}
-        };
-        
-        // Initialize map
-        map = new google.maps.Map(document.getElementById('map'), {
-            center: defaultPosition,
-            zoom: 15,
-            mapTypeControl: false,
-            streetViewControl: false,
-            fullscreenControl: true
+    // Initialize Map
+    function initMap(defaultLocation) {
+        myMap = olaMaps.init({
+            style: "https://api.olamaps.io/tiles/vector/v1/styles/default-light-standard/style.json",
+            container: 'map',
+            center: defaultLocation,
+            zoom: 15
         });
-        
-        // Add marker (not draggable)
-        marker = new google.maps.Marker({
-            position: defaultPosition,
-            map: map,
-            draggable: false, // Disabled dragging
-            title: 'Your Location'
+
+        // Add marker after map is loaded
+        myMap.on('load', () => {
+            marker = olaMaps
+                .addMarker({ offset: [0, -15], anchor: 'bottom', color: 'red', draggable: false })
+                .setLngLat(defaultLocation)
+                .addTo(myMap);
+
+            // Add office marker if office location is set
+            @if($settings->office_latitude && $settings->office_longitude)
+            const officeLocation = [
+                parseFloat('{{ $settings->office_longitude }}'),
+                parseFloat('{{ $settings->office_latitude }}')
+            ];
+            
+            // Add office marker
+            const officeMarker = olaMaps
+                .addMarker({ offset: [0, -15], anchor: 'bottom', color: 'blue' })
+                .setLngLat(officeLocation)
+                .addTo(myMap);
+            
+            // Add geofence circle
+            const geofenceRadius = {{ $settings->geofence_radius ?? 100 }};
+            const circle = olaMaps.addCircle({
+                center: officeLocation,
+                radius: geofenceRadius,
+                fillColor: '#4285F4',
+                fillOpacity: 0.1,
+                strokeColor: '#4285F4',
+                strokeOpacity: 0.8,
+                strokeWidth: 2
+            }).addTo(myMap);
+            @endif
         });
-        
-        // Add office marker if office location is set
-        @if($settings->office_latitude && $settings->office_longitude)
-        const officePosition = {
-            lat: {{ $settings->office_latitude }},
-            lng: {{ $settings->office_longitude }}
-        };
-        
-        // Add office marker
-        const officeMarker = new google.maps.Marker({
-            position: officePosition,
-            map: map,
-            icon: {
-                url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-            },
-            title: 'Office Location'
-        });
-        
-        // Add geofence circle
-        const geofenceCircle = new google.maps.Circle({
-            strokeColor: '#4285F4',
-            strokeOpacity: 0.8,
-            strokeWeight: 2,
-            fillColor: '#4285F4',
-            fillOpacity: 0.1,
-            map: map,
-            center: officePosition,
-            radius: {{ $settings->geofence_radius ?? 100 }}
-        });
-        @endif
-        
-        // Dragging disabled as per user request
     }
     
     // Get current location
@@ -304,22 +285,16 @@ $(document).ready(function() {
             function(position) {
                 // Success callback
                 const { latitude, longitude, accuracy } = position.coords;
-                currentPosition = { lat: latitude, lng: longitude };
+                currentPosition = [longitude, latitude]; // Note: Ola Maps uses [longitude, latitude] format
                 
                 // Update map
-                if (map && marker) {
-                    const latLng = new google.maps.LatLng(latitude, longitude);
-                    map.setCenter(latLng);
-                    marker.setPosition(latLng);
+                if (myMap && marker) {
+                    marker.setLngLat(currentPosition);
+                    myMap.setCenter(currentPosition);
                     $('#map').show();
                 } else {
-                    initMap();
-                    if (map && marker) {
-                        const latLng = new google.maps.LatLng(latitude, longitude);
-                        map.setCenter(latLng);
-                        marker.setPosition(latLng);
-                        $('#map').show();
-                    }
+                    initMap(currentPosition);
+                    $('#map').show();
                 }
                 
                 // Validate location
@@ -327,24 +302,11 @@ $(document).ready(function() {
             },
             function(error) {
                 // Error callback
-                let errorMessage = 'Unable to retrieve your location. ';
-                
-                switch(error.code) {
-                    case error.PERMISSION_DENIED:
-                        errorMessage += 'Please enable location services in your browser settings.';
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        errorMessage += 'Location information is unavailable.';
-                        break;
-                    case error.TIMEOUT:
-                        errorMessage += 'The request to get your location timed out.';
-                        break;
-                    case error.UNKNOWN_ERROR:
-                        errorMessage += 'An unknown error occurred.';
-                        break;
-                }
-                
-                $status.removeClass('alert-info').addClass('alert-danger').html(`<i class="bi bi-exclamation-triangle-fill me-2"></i><span>${errorMessage}</span>`);
+                console.error('Error getting location:', error);
+                $status.removeClass('alert-info').addClass('alert-danger').html(`
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span>Error getting your location: ${error.message}</span>
+                `);
                 $btn.prop('disabled', false).html('<i class="bi bi-geo-alt-fill me-2"></i> Update Location');
             },
             {
@@ -355,7 +317,7 @@ $(document).ready(function() {
         );
     }
     
-    // Validate location (check if within geofence)
+    // Validate location
     function validateLocation(latitude, longitude) {
         const $btn = $('#getLocationBtn');
         const $status = $('#locationStatus');
@@ -365,23 +327,6 @@ $(document).ready(function() {
             isLocationValid = true;
             $('#checkInBtn, #checkOutBtn').prop('disabled', false);
             return;
-        }
-        
-        // Get address from coordinates
-        if (geocoder) {
-            geocoder.geocode({ location: { lat: latitude, lng: longitude } }, function(results, status) {
-                if (status === 'OK' && results[0]) {
-                    const address = results[0].formatted_address;
-                    
-                    // Create info window
-                    const infoWindow = new google.maps.InfoWindow({
-                        content: `<div style="font-size:12px">${address}</div>`
-                    });
-                    
-                    // Show info window
-                    infoWindow.open(map, marker);
-                }
-            });
         }
         
         // Check if office coordinates are set
@@ -468,8 +413,7 @@ $(document).ready(function() {
         const $btn = action === 'check-in' ? $('#checkInBtn') : $('#checkOutBtn');
         const originalText = $btn.html();
         
-        // Disable button and show loading state
-        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Processing...');
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> Processing...');
         
         // Prepare data
         const data = {
@@ -479,7 +423,16 @@ $(document).ready(function() {
         
         // Add location data if available
         if (currentPosition) {
-            data.location = `${currentPosition.lat},${currentPosition.lng}`;
+            // Fix: Send coordinates in correct order [lat, lng]
+            data.location = `${currentPosition[1]},${currentPosition[0]}`; // Convert from [lng,lat] to "lat,lng"
+            data.latitude = currentPosition[1];  // Latitude
+            data.longitude = currentPosition[0]; // Longitude
+            
+            console.log('Sending location data:', {
+                location: data.location,
+                latitude: data.latitude,
+                longitude: data.longitude
+            });
         }
         
         // Determine URL based on action
@@ -510,10 +463,13 @@ $(document).ready(function() {
                 }
             },
             error: function(xhr) {
+                console.log('AJAX error:', xhr);
+                
                 let errorMessage = 'An error occurred. Please try again.';
                 
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     errorMessage = xhr.responseJSON.message;
+                    console.log('Server error message:', errorMessage);
                 } else if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
                     // Handle validation errors
                     const errors = xhr.responseJSON.errors;
@@ -532,6 +488,15 @@ $(document).ready(function() {
         $('#getLocationBtn').on('click', function() {
             getCurrentLocation();
         });
+    
+        // Initialize map with default office location if available
+        @if($settings->office_latitude && $settings->office_longitude)
+        const defaultLocation = [
+            parseFloat('{{ $settings->office_longitude }}'),
+            parseFloat('{{ $settings->office_latitude }}')
+        ];
+        initMap(defaultLocation);
+        @endif
     } else {
         // If geolocation is not required, enable buttons and hide location elements
         $('#checkInBtn, #checkOutBtn').prop('disabled', false);

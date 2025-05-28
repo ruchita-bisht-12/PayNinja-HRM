@@ -176,6 +176,14 @@ class Employee extends Model
     }
 
     /**
+     * Get the employee's leave requests.
+     */
+    public function leaveRequests()
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
+
+    /**
      * Get the leave balance for a specific leave type and year.
      */
     public function getLeaveBalance($leaveTypeId, $year = null)
