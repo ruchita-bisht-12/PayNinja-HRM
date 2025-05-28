@@ -78,6 +78,14 @@
             <span>Salary Details</span>
         </a>
     </li>
+    @if(isset(Auth::user()->employee) && Auth::user()->employee->currentSalary)
+    <li class="{{ Request::is('employee/salary/payslips*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('employee.salary.payslips') }}">
+            <i class="fas fa-file-pdf"></i>
+            <span>My Payslips</span>
+        </a>
+    </li>
+    @endif
     
                     <li class="menu-header">Reimbursements</li>
                     <li
@@ -188,6 +196,14 @@
                     <span>Add Salary Record</span>
                 </a>
             </li>
+            @if(isset(Auth::user()->employee) && Auth::user()->employee->currentSalary)
+            <li class="{{ Request::is('employee/salary/payslips*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('employee.salary.payslips') }}">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>My Payslips</span>
+                </a>
+            </li>
+            @endif
 
             <li class="menu-header">Reimbursements</li>
           

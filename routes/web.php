@@ -227,6 +227,17 @@ Route::get('/debug/attendance', function() {
             Route::get('monthly/{year}/{month}', [\App\Http\Controllers\Employee\SalaryController::class, 'monthlyDetails'])
                 ->where(['year' => '[0-9]{4}', 'month' => '0[1-9]|1[0-2]' ])
                 ->name('monthly.details');
+                
+            // PDF Payslip Routes
+            Route::get('payslips', [\App\Http\Controllers\PayslipController::class, 'listPayslips'])->name('payslips');
+            
+            Route::get('payslip/{employee}/{monthYear?}', [\App\Http\Controllers\PayslipController::class, 'showPayslip'])
+                ->where('monthYear', '[0-9]{4}-(0[1-9]|1[0-2])')
+                ->name('payslip.view');
+                
+            Route::get('payslip/{employee}/{monthYear}/download', [\App\Http\Controllers\PayslipController::class, 'downloadPayslip'])
+                ->where('monthYear', '[0-9]{4}-(0[1-9]|1[0-2])')
+                ->name('payslip.download');
         });
 
         // Leave Requests

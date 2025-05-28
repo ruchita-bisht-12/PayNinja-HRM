@@ -10,7 +10,7 @@
                 <div class="card-header">
                     <h5 class="card-title">Salary History - {{ $employee->name }}</h5>
                     <div class="card-tools">
-                        <a href="{{ route('admin.salary.create', $employee->id) }}" class="btn btn-primary btn-sm">
+                        <a href="{{ route('admin.salary.create', ['employee' => $employee->id]) }}" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus"></i> Add New Salary
                         </a>
                         <a href="{{ route('admin.salary.index') }}" class="btn btn-default btn-sm">

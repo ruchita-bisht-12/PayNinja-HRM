@@ -16,9 +16,20 @@ class EmployeeSalaryController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+    /**
+     * Display a listing of employee salaries.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function index()
     {
+        // dd(auth()->user()->company_id);
+        // Get the company ID of the currently logged-in admin
+        $companyId = auth()->user()->company_id;
+        
+        // Only show employees from the same company
         $employees = Employee::with('currentSalary')
+            ->where('company_id', $companyId)
             ->orderBy('name')
             ->paginate(10);
             
@@ -31,15 +42,46 @@ class EmployeeSalaryController extends Controller
      * @param int $employeeId
      * @return \Illuminate\Http\Response
      */
-    public function create($employeeId)
-    {
+    // public function create(Request $request)
+    // {
+    //     $employeeId = $request->query('employee');
+    //     // dd($request->all());
+    //     $employee = Employee::findOrFail($employeeId);
+    //     $currentSalary = $employee->currentSalary;
         
+    //     return view('admin.salary.create', compact('employee', 'currentSalary'));
+    // }
+/**
+ * Show the form for creating a new salary record.
+ *
+ * @param \Illuminate\Http\Request $request
+ * @return \Illuminate\Http\Response
+ */
+public function create(Request $request)
+{
+    // dd($request->all());
+    // Check if employee ID is provided in the query string
+    if (!$request->has('employee')) {
+        // If no employee ID is provided, redirect to the salary index page
+        return redirect()->route('admin.salary.index')
+            ->with('error', 'Please select an employee to create a salary record.');
+    }
+
+    try {
+        $employeeId = $request->query('employee');
         $employee = Employee::findOrFail($employeeId);
         $currentSalary = $employee->currentSalary;
         
         return view('admin.salary.create', compact('employee', 'currentSalary'));
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        return redirect()->route('admin.salary.index')
+            ->with('error', 'Employee not found.');
+    } catch (\Exception $e) {
+        Log::error('Error in create salary form: ' . $e->getMessage());
+        return redirect()->route('admin.salary.index')
+            ->with('error', 'An error occurred while loading the form. Please try again.');
     }
-
+}
     /**
      * Store a newly created salary record in storage.
      *
@@ -47,11 +89,13 @@ class EmployeeSalaryController extends Controller
      * @param  int  $employeeId
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request, $employeeId)
+    public function store(Request $request)
     {
+        // dd($request->all());
+        // dd($request->employee_id);
         // Log the start of the process
         Log::channel('single')->info('Starting salary creation', [
-            'employee_id' => $employeeId,
+            'employee_id' => $request->employee_id,
             'user_id' => auth()->id()
         ]);
     
@@ -82,7 +126,7 @@ class EmployeeSalaryController extends Controller
             DB::beginTransaction();
     
             // Find employee with user relationship
-            $employee = Employee::with('user')->findOrFail($employeeId);
+            $employee = Employee::with('user')->findOrFail($request->employee_id);
             
             // Calculate salary components
             $grossSalary = $request->basic_salary + 
@@ -101,14 +145,14 @@ class EmployeeSalaryController extends Controller
     
             // If this is set as current, update other records
             if ($request->boolean('is_current')) {
-                EmployeeSalary::where('employee_id', $employeeId)
+                EmployeeSalary::where('employee_id', $request->employee_id)
                     ->where('is_current', true)
                     ->update(['is_current' => false]);
             }
     
             // Create new salary record
             $salary = new EmployeeSalary([
-                'employee_id' => $employeeId,
+                'employee_id' => $request->employee_id,
                 'basic_salary' => $request->basic_salary,
                 'hra' => $request->hra,
                 'da' => $request->da,
@@ -139,12 +183,12 @@ class EmployeeSalaryController extends Controller
             // Log successful creation
             Log::info('Salary record created successfully', [
                 'salary_id' => $salary->id,
-                'employee_id' => $employeeId,
+                'employee_id' => $request->employee_id,
                 'net_salary' => $netSalary
             ]);
     
             return redirect()
-                ->route('admin.salary.show', $employeeId)
+                ->route('admin.salary.show', $request->employee_id)
                 ->with('success', 'Salary record created successfully.');
     
         } catch (ValidationException $e) {
@@ -154,7 +198,7 @@ class EmployeeSalaryController extends Controller
             
         } catch (ModelNotFoundException $e) {
             DB::rollBack();
-            Log::error('Employee not found', ['employee_id' => $employeeId]);
+            Log::error('Employee not found', ['employee_id' => $request->employee_id]);
             return back()->with('error', 'Employee not found.')->withInput();
             
         } catch (\Exception $e) {
@@ -237,7 +281,7 @@ class EmployeeSalaryController extends Controller
             'other_allowances' => 'required|numeric|min:0',
             'effective_from' => 'required|date',
             'notes' => 'nullable|string',
-            'deductions' => 'nullable|numeric|min:0',
+            'other_deductions' => 'nullable|numeric|min:0',
         ]);
 
         try {
@@ -245,12 +289,17 @@ class EmployeeSalaryController extends Controller
             
             $salary = EmployeeSalary::findOrFail($id);
             
-            // Set default values for missing fields
+            // Get other_deductions from the form or use existing values
+            $otherDeductions = $request->filled('other_deductions') ? $request->other_deductions : 0;
+            
+            // Include other deductions if they exist
             $pfDeduction = $salary->pf_deduction ?? 0;
             $esiDeduction = $salary->esi_deduction ?? 0;
             $professionalTax = $salary->professional_tax ?? 0;
             $leavesDeduction = $request->leaves_deduction ?? $salary->leaves_deduction ?? 0;
-            $totalDeductions = $pfDeduction + $esiDeduction + $professionalTax + $leavesDeduction;
+            
+            // Calculate total deductions including other_deductions
+            $totalDeductions = $otherDeductions + $pfDeduction + $esiDeduction + $professionalTax + $leavesDeduction;
             
             // Calculate gross and net salary
             $grossSalary = $request->basic_salary + $request->hra + $request->da + $request->other_allowances;
@@ -262,6 +311,7 @@ class EmployeeSalaryController extends Controller
             $salary->da = $request->da;
             $salary->other_allowances = $request->other_allowances;
             $salary->gross_salary = $grossSalary;
+            $salary->other_deductions = $otherDeductions;
             $salary->total_deductions = $totalDeductions;
             $salary->net_salary = $netSalary;
             $salary->effective_from = $request->effective_from;

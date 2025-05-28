@@ -63,13 +63,14 @@
                     </div>
 
                     <div class="col-md-6 mb-3">
-                        <label for="deductions" class="form-label">Deductions</label>
+                        <label for="other_deductions" class="form-label">Other Deductions</label>
                         <div class="input-group">
                             <span class="input-group-text">₹</span>
                             <input type="number" step="0.01" class="form-control" 
-                                   id="deductions" name="deductions" 
-                                   value="{{ old('deductions', $salary->deductions) }}">
+                                   id="other_deductions" name="other_deductions" 
+                                   value="{{ old('other_deductions', $salary->other_deductions) }}">
                         </div>
+                        <small class="text-muted">Additional deductions not covered by PF, ESI, etc.</small>
                     </div>
 
                     <div class="col-md-6 mb-3">

@@ -15,20 +15,7 @@
 
 <div class="section-header">
     <h1>Create Salary Record</h1>
-    <div class="section-header-breadcrumb">
-        <div class="breadcrumb-item">
-            <a href="{{ route('home') }}">Dashboard</a>
-        </div>
-        <div class="breadcrumb-item">
-            <a href="{{ route('admin.salary.index') }}">Employee Salaries</a>
-        </div>
-        <div class="breadcrumb-item">
-            {{ $employee->name }}
-        </div>
-        <div class="breadcrumb-item active">
-            Create Salary
-        </div>
-    </div>
+    
 </div>
 
 <div class="section-body">
@@ -101,7 +88,7 @@
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <div class="input-group-text">
-                                            $
+                                            ₹
                                         </div>
                                     </div>
                                     <input type="number" step="0.01" min="0" 
@@ -123,7 +110,7 @@
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <div class="input-group-text">
-                                            $
+                                        ₹
                                         </div>
                                     </div>
                                     <input type="number" step="0.01" min="0" 
@@ -145,7 +132,7 @@
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <div class="input-group-text">
-                                            $
+                                        ₹
                                         </div>
                                     </div>
                                     <input type="number" step="0.01" min="0" 
@@ -166,7 +153,7 @@
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <div class="input-group-text">
-                                            $
+                                                ₹
                                         </div>
                                     </div>
                                     <input type="number" step="0.01" min="0" 
@@ -187,7 +174,7 @@
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <div class="input-group-text">
-                                            $
+                                            ₹
                                         </div>
                                     </div>
                                     <input type="number" step="0.01" min="0" 
@@ -209,7 +196,7 @@
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <div class="input-group-text">
-                                            $
+                                            ₹
                                         </div>
                                     </div>
                                     <input type="number" step="0.01" min="0" 
@@ -230,7 +217,7 @@
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <div class="input-group-text">
-                                            $
+                                            ₹
                                         </div>
                                     </div>
                                     <input type="number" step="0.01" min="0" 
@@ -251,7 +238,7 @@
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <div class="input-group-text">
-                                            $
+                                            ₹
                                         </div>
                                     </div>
                                     <input type="number" step="0.01" min="0" 
@@ -272,7 +259,7 @@
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <div class="input-group-text">
-                                            $
+                                            ₹
                                         </div>
                                     </div>
                                     <input type="number" step="0.01" min="0" 
@@ -288,7 +275,7 @@
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <div class="input-group-text">
-                                            $
+                                            ₹
                                         </div>
                                     </div>
                                     <input type="number" step="0.01" min="0" 

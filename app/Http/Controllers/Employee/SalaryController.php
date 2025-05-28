@@ -20,7 +20,7 @@ class SalaryController extends Controller
         $employee = Auth::user()->employee;
         $currentSalary = $employee->currentSalary;
         
-        // Get all salary records with start_date and end_date
+        // Get all salary records with all necessary fields
         $salaryHistory = $employee->salaries()
             ->select([
                 'id',
@@ -31,8 +31,17 @@ class SalaryController extends Controller
                 'da',
                 'other_allowances',
                 'gross_salary',
+                'pf_deduction',
+                'esi_deduction',
+                'tds_deduction',
+                'professional_tax',
+                'loan_deductions',
+                'total_deductions',
+                'net_salary',
                 'created_at',
-                'updated_at'
+                'updated_at',
+                'is_current',
+                'paid_at'
             ])
             ->orderBy('start_date', 'desc')
             ->get()
@@ -46,6 +55,15 @@ class SalaryController extends Controller
                     'da' => $salary->da,
                     'other_allowances' => $salary->other_allowances,
                     'gross_salary' => $salary->gross_salary,
+                    'pf_deduction' => $salary->pf_deduction,
+                    'esi_deduction' => $salary->esi_deduction,
+                    'tds_deduction' => $salary->tds_deduction,
+                    'professional_tax' => $salary->professional_tax,
+                    'loan_deductions' => $salary->loan_deductions,
+                    'total_deductions' => $salary->total_deductions,
+                    'net_salary' => $salary->net_salary,
+                    'is_current' => $salary->is_current,
+                    'paid_at' => $salary->paid_at,
                     'created_at' => $salary->created_at,
                     'updated_at' => $salary->updated_at
                 ];
