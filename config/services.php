@@ -21,6 +21,10 @@ return [
     'google_maps' => [
         'key' => env('GOOGLE_MAPS_KEY'),
     ],
+    
+    'krutrim' => [
+        'maps_api_key' => env('KRUTRIM_MAPS_API_KEY'),
+    ],
 
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
