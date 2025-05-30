@@ -22,19 +22,28 @@
     <!-- jQuery 3.6.0 -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
     <script src="https://www.unpkg.com/olamaps-web-sdk@latest/dist/olamaps-web-sdk.umd.js"></script>
     
     <!-- Google Maps API will be loaded by the component when needed -->
     @stack('google-maps')
 
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <!-- Custom CSS Files -->
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/components.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/skins/reverse.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/modern-theme.css') }}">
 
     <!-- Additional CSS (if any) -->
     @stack('css')
+
+    <!-- Custom JavaScript -->
+    <script src="{{ asset('js/sidebar.js') }}"></script>
 </head>
 <body>
     <div id="app">

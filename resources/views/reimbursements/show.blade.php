@@ -27,6 +27,25 @@
                             <label class="form-label fw-bold">Description:</label>
                             <p>{{ $reimbursement->description }}</p>
                         </div>
+
+                        @if($reimbursement->receipt_path)
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Receipt:</label>
+                            @php
+                                $extension = strtolower(pathinfo($reimbursement->receipt_path, PATHINFO_EXTENSION));
+                                $receiptUrl = asset('storage/' . $reimbursement->receipt_path);
+                            @endphp
+                            @if(in_array($extension, ['jpg', 'jpeg', 'png']))
+                                <div>
+                                    <img src="{{ $receiptUrl }}" alt="Receipt Image" class="img-fluid rounded border" style="max-width:300px; max-height:400px;" />
+                                </div>
+                                <a href="{{ $receiptUrl }}" target="_blank" class="btn btn-outline-secondary mt-2">View Full Image</a>
+                            @elseif($extension === 'pdf')
+                                <a href="{{ $receiptUrl }}" target="_blank" class="btn btn-outline-primary mt-2">View Receipt PDF</a>
+                            @endif
+                            <a href="{{ $receiptUrl }}" download class="btn btn-outline-secondary mt-2">Download Receipt</a>
+                        </div>
+                        @endif
                         <div class="mb-3">
                             <label class="form-label fw-bold">Expense Date:</label>
                             <p>{{ \Carbon\Carbon::parse($reimbursement->expense_date)->format('M d, Y') }}</p>

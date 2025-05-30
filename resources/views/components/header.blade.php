@@ -1,43 +1,116 @@
 @auth
 <div class="navbar-bg"></div>
 <nav class="navbar navbar-expand-lg main-navbar">
-    <!-- Sidebar Toggle Button on the Left -->
-    <a href="#" data-toggle="sidebar" class="nav-link nav-link-lg">
-        <i class="fas fa-bars"></i>
-    </a>
-
-    <!-- Right Side of Navbar -->
-    <ul class="navbar-nav ms-auto">
-        <li class="nav-item dropdown">
-            <a href="#" class="nav-link dropdown-toggle nav-link-lg nav-link-user" data-bs-toggle="dropdown" aria-expanded="false">
-                <img alt="image" src="{{ asset('img/avatar/avatar-1.png') }}" class="rounded-circle me-1">
-                <div class="d-sm-none d-lg-inline-block">
-                    Namaskaram, {{ substr(auth()->user()->name, 0, 10) }}
-                </div>
+    <div class="container-fluid px-3 px-lg-4">
+        <!-- Left Side -->
+        <div class="d-flex align-items-center">
+            <!-- Sidebar Toggle Button -->
+            <a href="#" data-toggle="sidebar" class="nav-link nav-link-lg me-3 me-lg-4">
+                <i class="fas fa-bars"></i>
             </a>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                    <div class="dropdown-header">
-                        Welcome, {{ substr(auth()->user()->name, 0, 10) }}
+
+            <!-- Brand for Mobile -->
+            <a href="{{ url('/') }}" class="navbar-brand d-lg-none">
+                <span class="brand-text">PayNinja</span>
+            </a>
+        </div>
+
+        <!-- Mobile Toggle Button -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="fas fa-ellipsis-v"></i>
+        </button>
+
+        <!-- Collapsible Content -->
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <!-- Quick Actions - Shows on larger screens inline, on mobile in collapse -->
+            <div class="quick-actions my-3 my-lg-0 mx-lg-4">
+                <div class="d-grid d-lg-flex gap-2">
+                    <a href="{{ route('attendance.check-in') }}" class="btn btn-light">
+                        <i class="fas fa-clock me-2"></i> Quick Attendance
+                    </a>
+                    @if(Auth::user()->hasRole(['user', 'employee']))
+                    <a href="{{ route('reimbursements.create') }}" class="btn btn-light">
+                        <i class="fas fa-receipt me-2"></i> New Reimbursement
+                    </a>
+                    @endif
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- Right Side -->
+        <ul class="navbar-nav ms-auto d-flex align-items-center">
+            <!-- Notifications -->
+            <li class="nav-item dropdown me-2 me-lg-3">
+                <a class="nav-link nav-link-lg position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="far fa-bell"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge">3</span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0 shadow-sm">
+                    <div class="dropdown-header border-bottom p-3">
+                        <h6 class="m-0">Notifications</h6>
                     </div>
-                </li>
-                <li>
-                    <a class="dropdown-item" href="{{ route('profile.edit') }}">
-                        <i class="fas fa-user me-2"></i> Edit Profile
-                    </a>
-                </li>
-                <li><hr class="dropdown-divider"></li>
-                <li>
-                    <a href="{{ route('logout') }}" class="dropdown-item text-danger"
-                       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                        <i class="fas fa-sign-out-alt me-2"></i> Logout
-                    </a>
-                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
-                        @csrf
-                    </form>
-                </li>
-            </ul>
-        </li>
-    </ul>
+                    <div class="dropdown-list-content dropdown-list-icons p-2" style="max-height: 300px; overflow-y: auto;">
+                        <a href="#" class="dropdown-item dropdown-item-unread rounded">
+                            <div class="dropdown-item-icon bg-primary text-white rounded-circle">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="dropdown-item-desc ms-3">
+                                <div class="text-dark">Don't forget to check in today</div>
+                                <div class="time text-primary small">Just now</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="dropdown-footer text-center border-top p-2">
+                        <a href="#" class="text-decoration-none">View All <i class="fas fa-chevron-right ms-1"></i></a>
+                    </div>
+                </div>
+            </li>
+
+            <!-- User Menu -->
+            <li class="nav-item dropdown ms-2">
+                <a href="#" class="nav-link dropdown-toggle nav-link-lg nav-link-user d-flex align-items-center" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img alt="image" src="{{ asset('img/avatar/avatar-1.png') }}" class="rounded-circle me-2" width="32">
+                    <div class="d-none d-lg-inline-block">
+                        <span class="fw-medium">{{ auth()->user()->name }}</span>
+                        <small class="d-block text-muted">{{ auth()->user()->roles && auth()->user()->roles->first() ? ucfirst(auth()->user()->roles->first()->name) : 'User' }}</small>
+                    </div>
+                    <div class="d-lg-none">
+                        <span class="fw-medium">{{ Str::words(auth()->user()->name, 1, '') }}</span>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <div class="dropdown-header border-bottom p-3">
+                            <h6 class="mb-0">{{ auth()->user()->name }}</h6>
+                            <small class="text-muted">{{ auth()->user()->email }}</small>
+                        </div>
+                    </li>
+                    <li>
+                        <a class="dropdown-item py-2" href="{{ route('profile.edit') }}">
+                            <i class="fas fa-user me-2"></i> Edit Profile
+                        </a>
+                    </li>
+                    @if(Auth::user()->hasRole(['user', 'employee']))
+                    <li>
+                        <a class="dropdown-item py-2" href="{{ route('employee.profile') }}">
+                            <i class="fas fa-id-card me-2"></i> My Employee Profile
+                        </a>
+                    </li>
+                    @endif
+                    <li><hr class="dropdown-divider my-1"></li>
+                    <li>
+                        <a href="{{ route('logout') }}" class="dropdown-item text-danger py-2"
+                           onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                            <i class="fas fa-sign-out-alt me-2"></i> Logout
+                        </a>
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                            @csrf
+                        </form>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+    </div>
 </nav>
 @endauth
