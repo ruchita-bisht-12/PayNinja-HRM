@@ -405,7 +405,11 @@ class ReimbursementController extends Controller
             $receiptPath = null;
             if ($request->hasFile('receipt')) {
                 try {
-                    $receiptPath = $request->file('receipt')->store('receipts', 'public');
+                    $file = $request->file('receipt');
+                    $extension = $file->getClientOriginalExtension();
+                    $employeeName = str_replace(' ', '-', strtolower($employee->name));
+                    $fileName = $employeeName . '-reimbursement-receipt-' . now()->format('YmdHis') . '.' . $extension;
+                    $receiptPath = $file->storeAs('receipts', $fileName, 'public');
                 } catch (\Exception $e) {
                     Log::error('Error uploading receipt: ' . $e->getMessage());
                     return redirect()->back()->with('error', 'Error uploading receipt file. Please try again.');
