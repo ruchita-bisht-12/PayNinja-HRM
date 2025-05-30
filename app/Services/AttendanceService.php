@@ -21,20 +21,27 @@ class AttendanceService
      */
     /**
      * Get attendance settings with geolocation info
+     * 
+     * @param int $companyId The company ID to get settings for
+     * @return object|null
      */
-    public function getAttendanceSettings()
+    public function getAttendanceSettings($companyId = null)
     {
-        // $settings = AttendanceSetting::latest('updated_at')
-        //     ->withoutGlobalScopes()
-        //     ->first();
+        // If no company ID provided, try to get it from authenticated user
+        if (!$companyId && Auth::check() && Auth::user()) {
+            $companyId = Auth::user()->company_id;
+        }
 
-        $companyId = Auth::user()->company_id;
-        // $companyId = 1;
-        // dd($companyId);
-        $settings = AttendanceSetting::where('company_id', $companyId) // replace $companyId with your actual variable
-        ->latest('updated_at')
-        ->withoutGlobalScopes()
-        ->first();
+        // If still no company ID, return null
+        if (!$companyId) {
+            return null;
+        }
+
+        // Get settings for the specified company
+        $settings = AttendanceSetting::where('company_id', $companyId)
+            ->latest('updated_at')
+            ->withoutGlobalScopes()
+            ->first();
 
         if (!$settings) {
             return null;
@@ -692,147 +699,202 @@ public function checkOut(Employee $employee, $location = null, $userLat = null, 
      * @param string|null $date Date to mark absences for (Y-m-d)
      * @return int Number of employees marked as absent
      */
+    /**
+     * Mark employees as absent if they haven't checked in by the auto-absent time
+     * 
+     * @param string|\Carbon\Carbon|null $date The date to check (defaults to today)
+     * @return int Number of employees marked as absent
+     */
     public function markAbsentEmployees($date = null)
     {
         $now = now();
         $date = $date ? Carbon::parse($date) : $now;
         $dateString = $date->toDateString();
         
-        // Get the auto absent time from settings
-        $settings = $this->getAttendanceSettings();
-        $autoAbsentTime = $settings->auto_absent_time;
+        // Get all unique company IDs that have employees
+        $companyIds = Employee::distinct()->pluck('company_id');
         
-        // If auto absent time is not set, don't mark anyone as absent
-        if (empty($autoAbsentTime)) {
-            \Log::info('Auto absent time not set, skipping auto-absence marking');
+        // If no companies found, return early
+        if ($companyIds->isEmpty()) {
+            \Log::info('No companies found with employees, skipping auto-absence marking');
             return 0;
         }
         
-        // Parse the auto absent time (format: H:i)
-        $autoAbsentDateTime = Carbon::parse($dateString . ' ' . $autoAbsentTime);
-        
-        // If current time is before auto absent time, don't mark anyone as absent yet
-        if ($now->lt($autoAbsentDateTime)) {
-            \Log::info('Current time is before auto absent time, skipping auto-absence marking', [
-                'current_time' => $now->toDateTimeString(),
-                'auto_absent_time' => $autoAbsentDateTime->toDateTimeString()
-            ]);
-            return 0;
-        }
-
-        // Don't mark absences on weekends or holidays
-        if ($this->isWeekend($date) || $this->isHoliday($date)) {
-            \Log::info('Skipping auto-absence marking for weekend or holiday', [
-                'date' => $dateString,
-                'is_weekend' => $this->isWeekend($date),
-                'is_holiday' => $this->isHoliday($date)
-            ]);
-            return 0;
-        }
-
-        // Get employees who didn't check in
-        $employees = Employee::whereDoesntHave('attendances', function($query) use ($dateString) {
-            $query->where('date', $dateString);
-        })->get();
-
         $markedAbsent = 0;
-        foreach ($employees as $employee) {
-            // Check if employee is on leave
-            if ($this->isOnLeave($employee, $date)) {
-                \Log::info('Skipping auto-absence for employee on leave', [
-                    'employee_id' => $employee->id,
-                    'date' => $dateString
+        $absentNames = [];
+        
+        // Process each company separately
+        foreach ($companyIds as $companyId) {
+            // Get settings for this company
+            $settings = $this->getAttendanceSettings($companyId);
+            
+            // Skip if no settings found for company or auto_absent_time not set
+            if (!$settings || empty($settings->auto_absent_time)) {
+                \Log::info('Skipping auto-absence - no settings for company', [
+                    'company_id' => $companyId
                 ]);
                 continue;
             }
-
-
-            // Check if employee is on leave for this date
-            if ($this->isOnLeave($employee, $date)) {
-                // Create leave record instead of absent
-                try {
-                    $leaveRequest = $employee->leaveRequests()
-                        ->where('status', 'approved')
-                        ->whereDate('start_date', '<=', $dateString)
-                        ->whereDate('end_date', '>=', $dateString)
-                        ->first();
-                        
-                    if ($leaveRequest) {
-                        Attendance::create([
-                            'employee_id' => $employee->id,
-                            'date' => $dateString,
-                            'status' => 'On Leave',
-                            'check_in_status' => 'On Leave',
-                            'leave_request_id' => $leaveRequest->id,
-                            'remarks' => 'On approved leave: ' . ($leaveRequest->leaveType->name ?? 'Leave'),
-                            'office_start_time' => $settings->office_start_time,
-                            'office_end_time' => $settings->office_end_time,
-                            'grace_period' => $settings->grace_period,
-                            'created_at' => $now,
-                            'updated_at' => $now
-                        ]);
-                        
-                        \Log::info('Marked employee as on leave', [
-                            'employee_id' => $employee->id,
-                            'date' => $dateString,
-                            'leave_request_id' => $leaveRequest->id
-                        ]);
-                        continue;
-                    }
-                } catch (\Exception $e) {
-                    \Log::error('Failed to mark employee as on leave', [
-                        'employee_id' => $employee->id,
-                        'date' => $dateString,
-                        'error' => $e->getMessage()
-                    ]);
-                }
+            
+            // Parse the auto absent time for this company
+            $autoAbsentDateTime = Carbon::parse($dateString . ' ' . $settings->auto_absent_time);
+            
+            // If current time is before auto absent time, don't mark anyone as absent yet
+            if ($now->lt($autoAbsentDateTime)) {
+                \Log::info('Current time is before auto absent time, skipping auto-absence marking for company', [
+                    'company_id' => $companyId,
+                    'current_time' => $now->toDateTimeString(),
+                    'auto_absent_time' => $autoAbsentDateTime->toDateTimeString()
+                ]);
+                continue;
             }
             
-            // If not on leave, mark as absent
-            try {
-                Attendance::create([
-                    'employee_id' => $employee->id,
+            // Don't mark absences on weekends or holidays for this company
+            if ($this->isWeekend($date) || $this->isHoliday($date)) {
+                \Log::info('Skipping auto-absence marking for weekend or holiday', [
+                    'company_id' => $companyId,
                     'date' => $dateString,
-                    'status' => 'Absent',
-                    'check_in_status' => 'Absent',
-                    'remarks' => 'Marked absent by system - No check-in recorded',
-                    'office_start_time' => $settings->office_start_time,
-                    'office_end_time' => $settings->office_end_time,
-                    'grace_period' => $settings->grace_period,
-                    'created_at' => $now,
-                    'updated_at' => $now
+                    'is_weekend' => $this->isWeekend($date),
+                    'is_holiday' => $this->isHoliday($date)
                 ]);
-
-                $markedAbsent++;
-                
-                \Log::info('Marked employee as absent', [
-                    'employee_id' => $employee->id,
-                    'date' => $dateString,
-                    'auto_absent_time' => $autoAbsentTime
-                ]);
-                
-            } catch (\Exception $e) {
-                \Log::error('Failed to mark employee as absent', [
-                    'employee_id' => $employee->id,
-                    'date' => $dateString,
-                    'error' => $e->getMessage()
-                ]);
+                continue;
             }
-        }
+            
+            // Get employees who didn't check in for this company
+            $employees = Employee::where('company_id', $companyId)
+                ->whereDoesntHave('attendances', function($query) use ($dateString) {
+                    $query->where('date', $dateString);
+                })
+                ->get();
+                
+            $companyMarkedAbsent = 0;
+                
+            foreach ($employees as $employee) {
+                // Check if employee is on leave
+                if ($this->isOnLeave($employee, $date)) {
+                    // Create leave record instead of absent
+                    try {
+                        $leaveRequest = $employee->leaveRequests()
+                            ->where('status', 'approved')
+                            ->whereDate('start_date', '<=', $dateString)
+                            ->whereDate('end_date', '>=', $dateString)
+                            ->first();
+                            
+                        if ($leaveRequest) {
+                            Attendance::create([
+                                'employee_id' => $employee->id,
+                                'date' => $dateString,
+                                'status' => 'On Leave',
+                                'check_in_status' => 'On Leave',
+                                'leave_request_id' => $leaveRequest->id,
+                                'remarks' => 'On approved leave: ' . ($leaveRequest->leaveType->name ?? 'Leave'),
+                                'office_start_time' => $settings->office_start_time,
+                                'office_end_time' => $settings->office_end_time,
+                                'grace_period' => $settings->grace_period,
+                                'created_at' => $now,
+                                'updated_at' => $now
+                            ]);
+                            
+                            \Log::info('Marked employee as on leave', [
+                                'employee_id' => $employee->id,
+                                'date' => $dateString,
+                                'leave_request_id' => $leaveRequest->id
+                            ]);
+                            continue;
+                        }
+                    } catch (\Exception $e) {
+                        \Log::error('Failed to mark employee as on leave', [
+                            'employee_id' => $employee->id,
+                            'date' => $dateString,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
 
-        return $markedAbsent;
+
+                // If we reach here, the employee is not on leave and hasn't checked in
+                try {
+                    // Mark as absent
+                    Attendance::create([
+                        'employee_id' => $employee->id,
+                        'date' => $dateString,
+                        'status' => 'Absent',
+                        'check_in_status' => 'Absent',
+                        'remarks' => 'Marked absent by system - No check-in recorded',
+                        'office_start_time' => $settings->office_start_time,
+                        'office_end_time' => $settings->office_end_time,
+                        'grace_period' => $settings->grace_period,
+                        'created_at' => $now,
+                        'updated_at' => $now
+                    ]);
+
+                    $markedAbsent++;
+                    $companyMarkedAbsent++;
+                    $absentNames[] = $employee->name; // ← Add this line to collect the name
+
+                    
+                    \Log::info('Marked employee as absent', [
+                        'employee_id' => $employee->id,
+                        'company_id' => $companyId,
+                        'date' => $dateString,
+                        'auto_absent_time' => $settings->auto_absent_time
+                    ]);
+                    
+                } catch (\Exception $e) {
+                    \Log::error('Failed to mark employee as absent', [
+                        'employee_id' => $employee->id,
+                        'company_id' => $companyId,
+                        'date' => $dateString,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                }
+            } // End of employee loop
+            
+            // Log summary for this company
+            \Log::info('Finished processing auto-absence for company', [
+                'company_id' => $companyId,
+                'date' => $dateString,
+                'employees_processed' => $employees->count(),
+                'marked_absent' => $companyMarkedAbsent
+            ]);
+        } // End of company loop
+        
+        // return $markedAbsent;
+        return [
+            'count' => $markedAbsent,
+            'names' => $absentNames,
+        ];
+        
     }
 
     /**
      * Check if a date is a weekend based on company settings
+     *
+     * @param \Carbon\Carbon|string $date
+     * @return bool
      */
     protected function isWeekend($date)
     {
-        // Get company settings (you'll need to implement this based on your app structure)
-        $settings = \App\Models\AttendanceSetting::first();
-        $weekendDays = $settings ? explode(',', $settings->weekend_days) : ['Saturday', 'Sunday'];
+        if (is_string($date)) {
+            $date = Carbon::parse($date);
+        }
         
-        return in_array($date->format('l'), $weekendDays);
+        // Get company settings (you may need to adjust this based on your settings structure)
+        $settings = $this->getAttendanceSettings();
+        
+        // Default to Saturday and Sunday if no settings found
+        $weekendDays = $settings->weekend_days ?? [0, 6]; // 0 = Sunday, 6 = Saturday
+        
+        if (is_string($weekendDays)) {
+            $weekendDays = explode(',', $weekendDays);
+            $weekendDays = array_map('trim', $weekendDays);
+        }
+        
+        // Convert day of week to match Carbon's format (0-6, where 0 is Sunday)
+        $dayOfWeek = $date->dayOfWeek; // 0 (Sunday) to 6 (Saturday)
+        
+        return in_array($dayOfWeek, $weekendDays);
     }
 
     /**

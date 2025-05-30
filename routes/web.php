@@ -219,7 +219,9 @@ Route::get('/debug/attendance', function() {
     // Employee Routes
     Route::middleware(['role:user,employee'])->prefix('employee')->name('employee.')->group(function () {
         // Profile
-        Route::get('profile', [EmployeeController::class, 'show'])->name('profile');
+        Route::get('profile', [\App\Http\Controllers\Employee\ProfileController::class, 'show'])->name('profile');
+        Route::post('profile/update', [\App\Http\Controllers\Employee\ProfileController::class, 'update'])->name('profile.update');
+        Route::post('profile/update-image', [\App\Http\Controllers\Employee\ProfileController::class, 'updateImage'])->name('profile.update-image');
         Route::get('colleagues', [EmployeeController::class, 'listColleagues'])->name('colleagues');
         // Salary Routes
         Route::prefix('salary')->name('salary.')->group(function () {

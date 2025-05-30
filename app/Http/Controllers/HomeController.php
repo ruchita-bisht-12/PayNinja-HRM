@@ -120,12 +120,25 @@ class HomeController extends Controller
         } elseif ($user->role === 'user') {
             return view('user.dashboard', compact('loggedInUser'));
         } else {
-            // Employee dashboard with role distribution
+            // Employee dashboard
+            $employee = $user->employee;
+            
+            if (!$employee) {
+                return redirect()->route('home')->with('error', 'Employee record not found.');
+            }
+
+            // Get today's attendance
+            $todayAttendance = $employee->attendances()
+                ->whereDate('date', now()->toDateString())
+                ->first();
+
+            // Get leave balance
+            $leaveBalance = $employee->leaveBalance ?? 0;
+
             return view('employee.dashboard', compact(
-                'roleLabels', 
-                'roleData', 
-                'roleColors',
-                'loggedInUser'
+                'loggedInUser',
+                'todayAttendance',
+                'leaveBalance'
             ));
         }
     }

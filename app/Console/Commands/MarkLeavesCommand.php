@@ -103,7 +103,13 @@ class MarkLeavesCommand extends Command
                     }
                 } else {
                     // Create new attendance record
-                    $settings = $this->attendanceService->getAttendanceSettings();
+                    $settings = $this->attendanceService->getAttendanceSettings($employee->company_id);
+                    
+                    if (!$settings) {
+                        $this->error("Attendance settings not found for company ID: " . $employee->company_id);
+                        Log::error('Attendance settings not found for company', ['company_id' => $employee->company_id]);
+                        continue;
+                    }
                     
                     $employee->attendances()->create([
                         'date' => $dateString,
@@ -111,9 +117,9 @@ class MarkLeavesCommand extends Command
                         'check_in_status' => 'On Leave',
                         'leave_request_id' => $leaveRequest->id,
                         'remarks' => 'On approved leave: ' . ($leaveRequest->leaveType->name ?? 'Leave'),
-                        'office_start_time' => $settings->office_start_time,
-                        'office_end_time' => $settings->office_end_time,
-                        'grace_period' => $settings->grace_period,
+                        'office_start_time' => $settings->office_start_time ?? '09:00:00',
+                        'office_end_time' => $settings->office_end_time ?? '18:00:00',
+                        'grace_period' => $settings->grace_period ?? '00:15:00',
                     ]);
                     
                     $count++;
