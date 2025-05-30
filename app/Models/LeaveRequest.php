@@ -30,6 +30,24 @@ class LeaveRequest extends Model
         'end_date' => 'date',
         'approved_at' => 'datetime',
     ];
+    
+    /**
+     * Get the color for the status badge.
+     *
+     * @return string
+     */
+    public function getStatusColorAttribute()
+    {
+        $colors = [
+            'pending' => 'warning',
+            'approved' => 'success',
+            'rejected' => 'danger',
+            'cancelled' => 'secondary',
+            'in review' => 'info',
+        ];
+        
+        return $colors[strtolower($this->status)] ?? 'primary';
+    }
 
     /**
      * Get the employee that owns the leave request.

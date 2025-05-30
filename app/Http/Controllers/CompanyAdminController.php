@@ -37,18 +37,19 @@ class CompanyAdminController extends Controller
                 
                 if (!$companyId) {
                     // If no company exists, create a default one
-                    $company = Company::create([
-                        'name' => $user->name . "'s Company",
-                        'email' => $user->email,
-                        'phone' => '',
-                        'website' => '',
-                        'address' => '',
-                        'status' => 'active',
-                        'created_by' => $user->id,
-                    ]);
-                    $companyId = $company->id;
-                    $user->company_id = $companyId;
-                    $user->save();
+                    // $company = Company::create([
+                    //     'name' => $user->name . "'s Company",
+                    //     'email' => $user->email,
+                    //     'phone' => '',
+                    //     'website' => '',
+                    //     'address' => '',
+                    //     'status' => 'active',
+                    //     'created_by' => $user->id,
+                    // ]);
+                    // $companyId = $company->id;
+                    // $user->company_id = $companyId;
+                    // $user->save();
+                    Log::info('No company found for this user');
                 }
 
                 // Create a basic employee record
@@ -70,7 +71,13 @@ class CompanyAdminController extends Controller
                 ]);
 
                 // Refresh the user's employee relationship
+                $user = \App\Models\User::find($user->id);
                 $user->load('employee');
+            }
+
+            // Make sure we have a valid user
+            if (!$user) {
+                throw new \Exception('User not found');
             }
 
             // Get the company, either from employee or directly from user
@@ -178,15 +185,24 @@ class CompanyAdminController extends Controller
 
             DB::beginTransaction();
 
+            // Load the user relationship if not already loaded
+            $employee->load('user');
+            
+            // Check if user exists
+            if (!$employee->user) {
+                throw new \Exception('User record not found for this employee.');
+            }
+
             // Update user role
-            $employee->user->update(['role' => $request->role]);
+            $employee->user->role = $request->role;
+            $employee->user->save();
 
             DB::commit();
             return redirect()->back()->with('success', 'Employee role updated successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Error updating employee role: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Error updating employee role.');
+            return redirect()->back()->with('error', 'Error updating employee role: ' . $e->getMessage());
         }
     }
 

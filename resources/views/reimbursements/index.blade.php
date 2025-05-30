@@ -35,7 +35,7 @@
                         <td>{{ $reimbursement->title }}</td>
                         <td>{{ $reimbursement->employee->user->name }}</td>
                         <td>{{ $reimbursement->company->name }}</td>
-                        <td>${{ number_format($reimbursement->amount, 2) }}</td>
+                        <td>₹{{ number_format($reimbursement->amount, 2) }}</td>
                         <td>
                             <span class="badge bg-{{ $reimbursement->status === 'pending' ? 'warning' : ($reimbursement->status === 'reporter_approved' ? 'info' : ($reimbursement->status === 'admin_approved' ? 'success' : 'danger')) }}">
                                 {{ ucfirst($reimbursement->status) }}

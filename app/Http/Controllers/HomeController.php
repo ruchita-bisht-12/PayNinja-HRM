@@ -56,30 +56,77 @@ class HomeController extends Controller
     public function index(){
         $user = Auth::user();
         $loggedInUser = $user;
-        // dd($loggedInUser);
-        if ($user->role === 'superadmin') {
+        
+        // Common data for all roles
+        $employeeRoles = User::whereNotNull('role')
+            ->select('role', DB::raw('count(*) as total'))
+            ->groupBy('role')
+            ->orderBy('total', 'desc')
+            ->get();
+            
+        // Prepare data for charts
+        $roleLabels = $employeeRoles->pluck('role');
+        $roleData = $employeeRoles->pluck('total');
+        $roleColors = [
+            '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', 
+            '#5a5c69', '#858796', '#e83e8c', '#fd7e14', '#20c9a6'
+        ];
 
+        if ($user->role === 'superadmin') {
             $totalCompanies = Company::count();
             $totalUsers = User::count();
             $totalDepartments = Department::count();
-
             $usersByRole = User::select('role', DB::raw('count(*) as total'))
                                 ->groupBy('role')
                                 ->pluck('total', 'role');
             $companiesWithAdmins = Company::with('admin')->get();
-            $loggedInUser = $user;
-            return view('superadmin.dashboard', compact('totalCompanies', 'totalUsers', 'totalDepartments', 'usersByRole', 'companiesWithAdmins', 'loggedInUser'));
-
-        } elseif ($user->role === 'company_admin') {
-            return view('company_admin.dashboard');
-        } elseif ($user->role === 'admin') {
-            return view('admin.dashboard');
-        } elseif ($user->role === 'user') {
-
-            return view('user.dashboard', compact('loggedInUser'));
             
+            return view('superadmin.dashboard', compact(
+                'totalCompanies', 
+                'totalUsers', 
+                'totalDepartments', 
+                'usersByRole', 
+                'companiesWithAdmins', 
+                'loggedInUser',
+                'roleLabels',
+                'roleData',
+                'roleColors'
+            ));
+        } elseif ($user->role === 'company_admin') {
+            // For company admin, show data for their company only
+            $companyId = $user->company_id;
+            $companyEmployees = User::where('company_id', $companyId)
+                ->select('role', DB::raw('count(*) as total'))
+                ->groupBy('role')
+                ->orderBy('total', 'desc')
+                ->get();
+                
+            $companyRoleLabels = $companyEmployees->pluck('role');
+            $companyRoleData = $companyEmployees->pluck('total');
+            
+            return view('company_admin.dashboard', compact(
+                'roleLabels', 
+                'roleData', 
+                'roleColors',
+                'companyRoleLabels',
+                'companyRoleData'
+            ));
+        } elseif ($user->role === 'admin') {
+            return view('admin.dashboard', compact(
+                'roleLabels', 
+                'roleData', 
+                'roleColors'
+            ));
+        } elseif ($user->role === 'user') {
+            return view('user.dashboard', compact('loggedInUser'));
         } else {
-            return view('employee.dashboard');
+            // Employee dashboard with role distribution
+            return view('employee.dashboard', compact(
+                'roleLabels', 
+                'roleData', 
+                'roleColors',
+                'loggedInUser'
+            ));
         }
     }
 

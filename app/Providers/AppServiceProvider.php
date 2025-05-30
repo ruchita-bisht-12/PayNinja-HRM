@@ -2,8 +2,9 @@
 
 namespace App\Providers;
 
-use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Config;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +21,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Force HTTPS in production or when behind a proxy
+        if ($this->app->environment('production') || 
+            (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')) {
+            URL::forceScheme('https');
+            $this->app['request']->server->set('HTTPS', 'on');
+        }
+        
+        // Set secure cookie flags
+        if (config('session.secure')) {
+            Config::set('session.secure', true);
+            Config::set('session.same_site', 'none');
+        }
     }
 }

@@ -14,50 +14,52 @@ use Illuminate\Http\Request;
 class ReimbursementController extends Controller
 {
     public function index()
-    {
-        try {
-            $user = Auth::user();
-            
-            // Start building the query with relationships
-            $query = Reimbursement::with([
-                'employee',
-                'company',
-                'reporter',
-                'admin',
-                'employee.user'
-            ]);
+{
+    try {
+        $user = Auth::user();
 
-            // For non-admin users, only show their own reimbursements
-            if (!$user->hasRole('admin')) {
-                $employee = Employee::where('user_id', $user->id)->first();
-                
-                if ($employee) {
-                    $query->where('employee_id', $employee->id);
-                } else {
-                    // If no employee record exists, return empty result
-                    return view('reimbursements.index', ['reimbursements' => collect()]);
-                }
+        // Start building the query with relationships
+        $query = Reimbursement::with([
+            'employee',
+            'company',
+            'reporter',
+            'admin',
+            'employee.user'
+        ]);
+
+        // Treat both admin and company_admin as privileged roles
+        $isPrivileged = in_array($user->role, ['admin', 'company_admin']);
+
+        if (!$isPrivileged) {
+            // For regular users, only show their own reimbursements
+            $employee = Employee::where('user_id', $user->id)->first();
+
+            if ($employee) {
+                $query->where('employee_id', $employee->id);
             } else {
-                // For admin users, only show reimbursements from their company
-                if ($user->company_id) {
-                    $query->where('company_id', $user->company_id);
-                } else {
-                    // If admin has no company assigned, return empty result
-                    return view('reimbursements.index', ['reimbursements' => collect()])
-                        ->with('warning', 'Your admin account is not associated with any company.');
-                }
+                // No employee record means no reimbursements to show
+                return view('reimbursements.index', ['reimbursements' => collect()]);
             }
-
-            // Get paginated results
-            $reimbursements = $query->latest()->paginate(10);
-
-            return view('reimbursements.index', compact('reimbursements'));
-            
-        } catch (\Exception $e) {
-            Log::error('Error fetching reimbursements: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Error loading reimbursements: ' . $e->getMessage());
+        } else {
+            // For admin/company_admin, only show reimbursements from their company
+            if ($user->company_id) {
+                $query->where('company_id', $user->company_id);
+            } else {
+                return view('reimbursements.index', ['reimbursements' => collect()])
+                    ->with('warning', 'Your account is not associated with any company.');
+            }
         }
+
+        // Get paginated results
+        $reimbursements = $query->latest()->paginate(10);
+
+        return view('reimbursements.index', compact('reimbursements'));
+
+    } catch (\Exception $e) {
+        Log::error('Error fetching reimbursements: ' . $e->getMessage());
+        return redirect()->back()->with('error', 'Error loading reimbursements: ' . $e->getMessage());
     }
+}
 
 
     public function create()
@@ -94,7 +96,7 @@ class ReimbursementController extends Controller
     public function approve(Request $request, Reimbursement $reimbursement)
     {
         try {
-            \Log::info('Starting reimbursement approval', [
+            Log::info('Starting reimbursement approval', [
                 'reimbursement_id' => $reimbursement->id,
                 'user_id' => Auth::id(),
                 'payload' => $request->all()
@@ -104,7 +106,7 @@ class ReimbursementController extends Controller
             $user = Auth::user();
             if (!$user) {
                 $error = 'Please login to continue.';
-                \Log::warning('No authenticated user found during approval');
+                Log::warning('No authenticated user found during approval');
                 
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
@@ -120,7 +122,7 @@ class ReimbursementController extends Controller
             
             if (!$employee) {
                 $error = 'Your employee record was not found. Please contact HR.';
-                \Log::error('Employee record not found for user', [
+                Log::error('Employee record not found for user', [
                     'user_id' => $user->id,
                     'email' => $user->email
                 ]);
@@ -136,7 +138,7 @@ class ReimbursementController extends Controller
 
             // Verify company ownership
             if ($reimbursement->company_id !== $employee->company_id) {
-                \Log::warning('Company ownership verification failed', [
+                Log::warning('Company ownership verification failed', [
                     'user_company' => $employee->company_id,
                     'reimbursement_company' => $reimbursement->company_id
                 ]);
@@ -145,18 +147,26 @@ class ReimbursementController extends Controller
 
             // Check user role from the role column
             $isAdmin = $user->role === 'admin';
-            $isCompanyAdmin = $user->hasRole('company_admin');
+            $isCompanyAdmin = $user->role === 'company_admin';
             
-            \Log::debug('User role check', [
+            // Safely check for company admin role
+            if (method_exists($user, 'hasRole')) {
+                $isCompanyAdmin = $user->hasRole('company_admin');
+            } else {
+                $isCompanyAdmin = $user->role === 'company_admin';
+            }
+            
+            Log::debug('User role check', [
                 'user_id' => $user->id, 
                 'role' => $user->role,
                 'is_admin' => $isAdmin,
-                'is_company_admin' => $isCompanyAdmin
+                'is_company_admin' => $isCompanyAdmin,
+                'has_role_method' => method_exists($user, 'hasRole') ? 'exists' : 'missing'
             ]);
             
             // Check if user is the reporter
             $isReporter = $reimbursement->reporter_id === $employee->id;
-            \Log::debug('User permissions', [
+            Log::debug('User permissions', [
                 'user_id' => $user->id,
                 'is_admin' => $isAdmin,
                 'is_company_admin' => $isCompanyAdmin,
@@ -194,7 +204,7 @@ class ReimbursementController extends Controller
 
             // Update reimbursement with approval details
             if ($isAdmin || $isCompanyAdmin) {
-                $teamMember = \DB::table('team_members')
+                $teamMember = DB::table('team_members')
                     ->where('employee_id', $employee->id)
                     ->first();
                 
@@ -203,7 +213,7 @@ class ReimbursementController extends Controller
                     if ($isCompanyAdmin) {
                         $teamMember = (object)['employee_id' => $employee->id];
                     } else {
-                        \Log::error('Employee not found in team_members table', [
+                        Log::error('Employee not found in team_members table', [
                             'employee_id' => $employee->id,
                             'user_id' => $user->id
                         ]);
@@ -268,7 +278,7 @@ class ReimbursementController extends Controller
             $user = Auth::user();
             if (!$user) {
                 $error = 'Please login to continue.';
-                \Log::warning('No authenticated user found during reporter approval');
+                Log::warning('No authenticated user found during reporter approval');
                 
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json([
@@ -284,7 +294,7 @@ class ReimbursementController extends Controller
             
             if (!$employee) {
                 $error = 'Your employee record was not found. Please contact HR.';
-                \Log::error('Employee record not found for user during reporter approval', [
+                Log::error('Employee record not found for user during reporter approval', [
                     'user_id' => $user->id,
                     'email' => $user->email
                 ]);
@@ -530,7 +540,7 @@ class ReimbursementController extends Controller
     
             // Verify company ownership
             if ($reimbursement->company_id !== $employee->company_id) {
-                \Log::warning('Company ownership verification failed', [
+                Log::warning('Company ownership verification failed', [
                     'user_company' => $employee->company_id,
                     'reimbursement_company' => $reimbursement->company_id
                 ]);
@@ -551,32 +561,33 @@ class ReimbursementController extends Controller
     
             // Check user role from the role column
             $isAdmin = $user->role === 'admin';
-            \Log::debug('User role check', [
+            $isCompanyAdmin = $user->role === 'company_admin';
+            $isPrivileged = $isAdmin || $isCompanyAdmin;
+            
+            Log::debug('User role check', [
                 'user_id' => $user->id, 
                 'role' => $user->role,
-                'is_admin' => $isAdmin
+                'is_admin' => $isAdmin,
+                'is_company_admin' => $isCompanyAdmin
             ]);
             
             // Check if user is the reporter
             $isReporter = $reimbursement->reporter_id === $employee->id;
             Log::debug('User permissions', [
                 'user_id' => $user->id,
-                'is_admin' => $isAdmin,
+                'is_privileged' => $isPrivileged,
                 'is_reporter' => $isReporter,
                 'reimbursement_status' => $reimbursement->status
             ]);
             
-            if (!$isAdmin && !$isReporter) {
+            if (!$isPrivileged && !$isReporter) {
                 Log::warning('Unauthorized rejection attempt', [
                     'user_id' => $user->id,
                     'reimbursement_id' => $reimbursement->id,
-                    'is_admin' => $isAdmin,
+                    'is_privileged' => $isPrivileged,
                     'is_reporter' => $isReporter
                 ]);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You do not have permission to reject this reimbursement.'
-                ], 403);
+                return redirect()->back()->with('error', 'You do not have permission to reject this reimbursement.');
             }
     
             // Validate input
@@ -596,10 +607,7 @@ class ReimbursementController extends Controller
                         'employee_id' => $employee->id,
                         'user_id' => $user->id
                     ]);
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Your employee record is not properly set up in the system.'
-                    ], 400);
+                    return redirect()->back()->with('error', 'Your employee record is not properly set up in the system.');
                 }
             }
             
@@ -638,11 +646,8 @@ class ReimbursementController extends Controller
                     'team_member_id' => $teamMember ? $teamMember->id : null
                 ]);
                 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Reimbursement has been rejected successfully.',
-                    'redirect' => route('reimbursements.index')
-                ]);
+                return redirect()->route('reimbursements.show', $reimbursement->id)
+                    ->with('success', 'Reimbursement has been rejected successfully.');
                 
             } catch (\Exception $e) {
                 // Rollback the transaction on error
@@ -658,11 +663,8 @@ class ReimbursementController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while rejecting the reimbursement. Please try again.',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
+            return redirect()->route('reimbursements.show', $reimbursement->id)
+                ->with('error', 'An error occurred while rejecting the reimbursement. Please try again.');
         }
     }
 }

@@ -17,7 +17,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-bold">Amount:</label>
-                            <p>{{ $reimbursement->amount }}</p>
+                            <p>₹{{ number_format($reimbursement->amount, 2) }}</p>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-bold">Title:</label>
@@ -92,14 +92,16 @@
                         @php
                             $user = Auth::user();
                             $isAdmin = $user->hasRole('admin');
-                            $isReporter = $reimbursement->reporter_id && $user->id === $reimbursement->reporter->user_id;
+                            $isCompanyAdmin = $user->hasRole('company_admin');
+                            $isPrivileged = $isAdmin || $isCompanyAdmin;
+                            $isReporter = $reimbursement->reporter_id && $user->id === optional($reimbursement->reporter)->user_id;
                             
-                            // Admin can approve if status is pending or reporter_approved
+                            // Admin/Company Admin can approve if status is pending or reporter_approved
                             // Reporter can only approve if status is pending
-                            $canApprove = ($isAdmin && in_array($reimbursement->status, ['pending', 'reporter_approved'])) || 
+                            $canApprove = ($isPrivileged && in_array($reimbursement->status, ['pending', 'reporter_approved'])) || 
                                         ($isReporter && $reimbursement->status === 'pending');
                                         
-                            $canReject = ($isAdmin || $isReporter) && 
+                            $canReject = ($isPrivileged || $isReporter) && 
                                         in_array($reimbursement->status, ['pending', 'reporter_approved']);
                         @endphp
 

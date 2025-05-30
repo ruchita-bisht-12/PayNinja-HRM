@@ -260,6 +260,11 @@ class LeaveRequestController extends Controller
         $endDate = Carbon::parse($validated['end_date']);
         $totalDays = $startDate->diffInDays($endDate) + 1;
         
+        // Check for overlapping approved or pending leaves
+        if ($this->hasOverlappingLeaves($employee->id, $validated['start_date'], $validated['end_date'])) {
+            return redirect()->back()->with('error', 'You already have an approved or pending leave request that overlaps with these dates.');
+        }
+        
         // Check leave balance
         $currentYear = Carbon::now()->year;
         $leaveBalance = LeaveBalance::where('employee_id', $employee->id)
@@ -374,10 +379,15 @@ class LeaveRequestController extends Controller
      */
     public function update(Request $request, LeaveRequest $leaveRequest)
     {
-        $employee = Employee::where('user_id', Auth::id())->first();
+        $user = Auth::user();
+        $employee = Employee::where('user_id', $user->id)->first();
+        
+        if (!$employee) {
+            abort(404, 'Employee record not found.');
+        }
         
         // Check if user is authorized to update this leave request
-        if (!$employee || $leaveRequest->employee_id !== $employee->id) {
+        if ($leaveRequest->employee_id !== $employee->id) {
             abort(403, 'Unauthorized action.');
         }
         
@@ -389,11 +399,16 @@ class LeaveRequestController extends Controller
         
         $validated = $request->validate([
             'leave_type_id' => 'required|exists:leave_types,id',
-            'start_date' => 'required|date',
+            'start_date' => 'required|date|after_or_equal:today',
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'required|string',
             'attachment' => 'nullable|file|max:2048', // 2MB max
         ]);
+        
+        // Check for overlapping approved or pending leaves (excluding current leave request)
+        if ($this->hasOverlappingLeaves($employee->id, $validated['start_date'], $validated['end_date'], $leaveRequest->id)) {
+            return redirect()->back()->with('error', 'You already have another approved or pending leave request that overlaps with these dates.');
+        }
         
         // Check if leave type belongs to the company
         $leaveType = LeaveType::findOrFail($validated['leave_type_id']);
@@ -401,10 +416,16 @@ class LeaveRequestController extends Controller
             abort(403, 'Unauthorized action.');
         }
         
-        // Calculate total days
+        // Calculate total days - ensure start date is before end date
         $startDate = Carbon::parse($validated['start_date']);
         $endDate = Carbon::parse($validated['end_date']);
-        $totalDays = $endDate->diffInDays($startDate) + 1;
+        
+        // Ensure start date is before or equal to end date
+        if ($startDate->gt($endDate)) {
+            return redirect()->back()->with('error', 'End date must be after or equal to start date.');
+        }
+        
+        $totalDays = $startDate->diffInDays($endDate) + 1;
         
         // Check leave balance
         $currentYear = Carbon::now()->year;
@@ -489,9 +510,9 @@ class LeaveRequestController extends Controller
      */
     public function approve(Request $request, LeaveRequest $leaveRequest)
     {
-        // Check if user is admin
-        if (Auth::user()->role !== 'admin') {
-            abort(403, 'Unauthorized action.');
+        // Check if user is admin or company admin
+        if (!in_array(Auth::user()->role, ['admin', 'company_admin'])) {
+            abort(403, 'Unauthorized action. Only administrators can approve leave requests.');
         }
         
         // Check if leave request belongs to an employee in the company
@@ -542,9 +563,9 @@ class LeaveRequestController extends Controller
      */
     public function reject(Request $request, LeaveRequest $leaveRequest)
     {
-        // Check if user is admin
-        if (Auth::user()->role !== 'admin') {
-            abort(403, 'Unauthorized action.');
+        // Check if user is admin or company admin
+        if (!in_array(Auth::user()->role, ['admin', 'company_admin'])) {
+            abort(403, 'Unauthorized action. Only administrators can reject leave requests.');
         }
         
         // Check if leave request belongs to an employee in the company
@@ -575,6 +596,35 @@ class LeaveRequestController extends Controller
     }
 
     /**
+     * Check if there are any overlapping leave requests for the given employee and date range.
+     *
+     * @param  int  $employeeId
+     * @param  string  $startDate
+     * @param  string  $endDate
+     * @param  int|null  $excludeLeaveRequestId
+     * @return bool
+     */
+    protected function hasOverlappingLeaves($employeeId, $startDate, $endDate, $excludeLeaveRequestId = null)
+    {
+        $query = LeaveRequest::where('employee_id', $employeeId)
+            ->whereIn('status', ['approved', 'pending'])
+            ->where(function($q) use ($startDate, $endDate) {
+                $q->whereBetween('start_date', [$startDate, $endDate])
+                  ->orWhereBetween('end_date', [$startDate, $endDate])
+                  ->orWhere(function($innerQ) use ($startDate, $endDate) {
+                      $innerQ->where('start_date', '<=', $startDate)
+                            ->where('end_date', '>=', $endDate);
+                  });
+            });
+            
+        if ($excludeLeaveRequestId) {
+            $query->where('id', '!=', $excludeLeaveRequestId);
+        }
+        
+        return $query->exists();
+    }
+    
+    /**
      * Display the specified leave request for admin.
      *
      * @param  \App\Models\LeaveRequest  $leaveRequest
@@ -582,9 +632,9 @@ class LeaveRequestController extends Controller
      */
     public function adminShow(LeaveRequest $leaveRequest)
     {
-        // Check if user is admin
-        if (Auth::user()->role !== 'admin') {
-            abort(403, 'Unauthorized action.');
+        // Check if user is admin or company admin
+        if (!in_array(Auth::user()->role, ['admin', 'company_admin'])) {
+            abort(403, 'Unauthorized action. Only administrators can view leave request details.');
         }
         
         // Check if leave request belongs to an employee in the company
