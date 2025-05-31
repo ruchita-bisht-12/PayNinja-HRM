@@ -1,13 +1,21 @@
 @auth
+<!-- Add in your Blade layout or before </body> -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <div class="navbar-bg"></div>
 <nav class="navbar navbar-expand-lg main-navbar">
     <div class="container-fluid px-3 px-lg-4">
         <!-- Left Side -->
         <div class="d-flex align-items-center">
             <!-- Sidebar Toggle Button -->
-            <a href="#" data-toggle="sidebar" class="nav-link nav-link-lg me-3 me-lg-4">
+      
+            <!-- <a href="#"  data-toggle="sidebar" class="nav-link nav-link-lg me-3 me-lg-4">
                 <i class="fas fa-bars"></i>
-            </a>
+            </a> -->
+            <a href="#"  class="nav-link nav-link-lg me-3 me-lg-4" >
+    <i class="fas fa-bars"></i>
+</a>
+
 
             <!-- Brand for Mobile -->
             <a href="{{ url('/') }}" class="navbar-brand d-lg-none">
@@ -40,32 +48,6 @@
 
         <!-- Right Side -->
         <ul class="navbar-nav ms-auto d-flex align-items-center">
-            <!-- Notifications -->
-            <li class="nav-item dropdown me-2 me-lg-3">
-                <a class="nav-link nav-link-lg position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="far fa-bell"></i>
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge">3</span>
-                </a>
-                <div class="dropdown-menu dropdown-menu-lg dropdown-menu-end p-0 shadow-sm">
-                    <div class="dropdown-header border-bottom p-3">
-                        <h6 class="m-0">Notifications</h6>
-                    </div>
-                    <div class="dropdown-list-content dropdown-list-icons p-2" style="max-height: 300px; overflow-y: auto;">
-                        <a href="#" class="dropdown-item dropdown-item-unread rounded">
-                            <div class="dropdown-item-icon bg-primary text-white rounded-circle">
-                                <i class="fas fa-clock"></i>
-                            </div>
-                            <div class="dropdown-item-desc ms-3">
-                                <div class="text-dark">Don't forget to check in today</div>
-                                <div class="time text-primary small">Just now</div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="dropdown-footer text-center border-top p-2">
-                        <a href="#" class="text-decoration-none">View All <i class="fas fa-chevron-right ms-1"></i></a>
-                    </div>
-                </div>
-            </li>
 
             <!-- User Menu -->
             <li class="nav-item dropdown ms-2">

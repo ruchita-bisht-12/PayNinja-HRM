@@ -127,7 +127,7 @@
                 <th>PAN Number</th>
                 <td>{{ $salary->employee->pan_number ?? 'N/A' }}</td>
                 <th>Bank Account</th>
-                <td>{{ $salary->employee->bank_account_number ?? 'N/A' }}</td>
+                <td>{{ $salary->employee->bank_account_number ?? ($salary->employee->bank_account ?? 'N/A') }}</td>
             </tr>
         </table>
 

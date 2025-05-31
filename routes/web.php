@@ -237,8 +237,9 @@ Route::get('/debug/attendance', function() {
                 ->where('monthYear', '[0-9]{4}-(0[1-9]|1[0-2])')
                 ->name('payslip.view');
                 
-            Route::get('payslip/{employee}/{monthYear}/download', [\App\Http\Controllers\PayslipController::class, 'downloadPayslip'])
+            Route::get('payslip/{employee}/{monthYear}/download/{salaryId?}', [\App\Http\Controllers\PayslipController::class, 'downloadPayslip'])
                 ->where('monthYear', '[0-9]{4}-(0[1-9]|1[0-2])')
+                ->where('salaryId', '[0-9]*')
                 ->name('payslip.download');
         });
 
@@ -274,6 +275,14 @@ Route::get('/debug/attendance', function() {
     Route::middleware(['role:company_admin'])->prefix('company-admin')->name('company-admin.')->group(function () {
         // Dashboard
         Route::get('/dashboard', [\App\Http\Controllers\CompanyAdminController::class, 'dashboard'])->name('dashboard');
+        
+        // Payslips Management
+        Route::get('/payslips', [\App\Http\Controllers\PayslipController::class, 'getAllPayslips'])
+            ->name('payslips.index');
+            
+        // Export Payslips
+        Route::get('/payslips/export', [\App\Http\Controllers\PayslipController::class, 'exportPayslips'])
+            ->name('payslips.export');
 
         // Module Access Management
         Route::get('/module-access', [\App\Http\Controllers\CompanyAdminController::class, 'moduleAccess'])->name('module-access.index');

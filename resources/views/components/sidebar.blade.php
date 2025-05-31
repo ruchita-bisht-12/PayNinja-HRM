@@ -196,6 +196,12 @@
                     <span>Add Salary Record</span>
                 </a>
             </li>
+            <li class="{{ Request::is('employee/salary/details*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('employee.salary.details') }}">
+                    <i class="fas fa-money-check-alt"></i>
+                    <span>Salary Details</span>
+                </a>
+            </li>
             @if(isset(Auth::user()->employee) && Auth::user()->employee->currentSalary)
             <li class="{{ Request::is('employee/salary/payslips*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('employee.salary.payslips') }}">

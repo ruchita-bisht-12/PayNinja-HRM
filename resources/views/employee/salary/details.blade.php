@@ -143,6 +143,7 @@
                                                 <th class="text-right">Net Salary</th>
                                                 <th>Status</th>
                                                 <th>Payment</th>
+                                                <th>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -178,6 +179,18 @@
                                                                 <i class="fas fa-clock"></i> Pending
                                                             </span>
                                                         @endif
+                                                    </td>
+                                                    <td>
+                                                        <a href="{{ route('employee.salary.payslip.download', [
+                                                            'employee' => $employee->id, 
+                                                            'monthYear' => \Carbon\Carbon::parse($salary->start_date)->format('Y-m'),
+                                                            'salaryId' => $salary->id
+                                                        ]) }}" 
+                                                           class="btn btn-sm btn-outline-primary" 
+                                                           title="Download Payslip"
+                                                           @if(!$salary->paid_at) disabled @endif>
+                                                            <i class="fas fa-file-pdf"></i>
+                                                        </a>
                                                     </td>
                                                 </tr>
                                             @endforeach
