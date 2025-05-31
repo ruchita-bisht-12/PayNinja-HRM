@@ -22,6 +22,11 @@ class Designation extends Model
         return $this->belongsTo(Company::class);
     }
 
+    public function employees()
+    {
+        return $this->hasMany(Employee::class);
+    }
+
     protected $casts = [
         'created_at' => 'datetime',
         'updated_at' => 'datetime',

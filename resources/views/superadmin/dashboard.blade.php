@@ -74,7 +74,7 @@
                                 <h4>Total Employees</h4>
                             </div>
                             <div class="card-body">
-                                {{ $totalUsers ?? 0 }}
+                                {{ ($usersByRole['employee'] ?? 0) }}
                             </div>
                         </div>
                     </div>
@@ -137,7 +137,7 @@
                                 <h4>Regular Users</h4>
                             </div>
                             <div class="card-body">
-                                {{ $usersByRole['user'] ?? ($usersByRole['employee'] ?? 0) }}
+                                {{ $usersByRole['user'] ?? 0 }}
                             </div>
                         </div>
                     </div>

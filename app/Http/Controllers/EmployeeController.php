@@ -8,6 +8,9 @@ use App\Models\Department;
 use App\Models\Designation;
 use App\Models\Employee;
 use App\Models\EmployeeDetail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
@@ -79,7 +82,7 @@ class EmployeeController extends Controller
             'joining_date' => $validated['joining_date'],
             'employment_type' => $validated['employment_type'],
             'address' => $validated['address'] ?? '',
-            'created_by' => auth()->id()
+            'created_by' => Auth::id()
         ]);
 
         // Create employee details
@@ -98,13 +101,13 @@ class EmployeeController extends Controller
     public function show()
     {
         // Display logged-in employee data
-        $employee = auth()->user();  // Get the logged-in employee
+        $employee = Auth::user();  // Get the logged-in employee
         return view('employee.profile', compact('employee'));
     }
 
     public function listColleagues()
     {
-        $currentUser = auth()->user()->load('employeeCompany');
+        $currentUser = Auth::user()->load('employeeCompany');
         $colleagues = collect(); // Default to an empty collection
         $companyName = 'N/A';
 
@@ -282,5 +285,20 @@ class EmployeeController extends Controller
             return redirect()->route('company.employees.index', $companyId)
                 ->with('error', 'Error deleting employee: ' . $e->getMessage());
         }
+    }
+    
+    public function admins($companyId)
+    {
+        $company = Company::findOrFail($companyId);
+        
+        $admins = Employee::with(['user', 'department', 'designation'])
+            ->whereHas('user', function($query) {
+                $query->where('role', 'admin');
+            })
+            ->where('company_id', $companyId)
+            ->orderBy('name')
+            ->get();
+            
+        return view('company.employees.admins', compact('company', 'admins'));
     }
 }

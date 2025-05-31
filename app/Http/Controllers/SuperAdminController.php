@@ -90,4 +90,60 @@ class SuperAdminController extends Controller
         return redirect()->route('superadmin.companies.index')
             ->with('success', 'Company Deleted Successfully');
     }
+
+    public function show($id)
+    {
+        $company = Company::findOrFail($id);
+        
+        // Get entities and their counts
+        $companyAdmins = \App\Models\Employee::with('user')
+            ->whereHas('user', function($q) {
+                $q->where('role', 'company_admin');
+            })
+            ->where('company_id', $id)
+            ->get();
+        
+        $admins = \App\Models\Employee::with('user')
+            ->whereHas('user', function($q) {
+                $q->where('role', 'admin');
+            })
+            ->where('company_id', $id)
+            ->get();
+        
+        $employees = \App\Models\Employee::with(['user', 'department', 'designation'])
+            ->whereHas('user', function($q) {
+                $q->where('role', 'employee');
+            })
+            ->where('company_id', $id)
+            ->get();
+        
+        $departments = \App\Models\Department::where('company_id', $id)
+            ->withCount('employees')
+            ->get();
+            
+        $designations = \App\Models\Designation::where('company_id', $id)
+            ->withCount('employees')
+            ->get();
+
+        // Get counts for summary cards
+        $companyAdminsCount = $companyAdmins->count();
+        $adminsCount = $admins->count();
+        $employeesCount = $employees->count();
+        $departmentsCount = $departments->count();
+        $designationsCount = $designations->count();
+
+        return view('superadmin.companies.show', compact(
+            'company',
+            'companyAdmins',
+            'admins',
+            'employees',
+            'departments',
+            'designations',
+            'companyAdminsCount',
+            'adminsCount', 
+            'employeesCount',
+            'departmentsCount',
+            'designationsCount'
+        ));
+    }
 }
