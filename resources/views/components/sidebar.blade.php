@@ -34,9 +34,9 @@
                 @if (Auth::user()->hasRole(['user', 'employee']))
                     <li class="menu-header">Profile</li>
                     <li class="{{ Request::is('employee/profile') ? 'active' : '' }}">
-                        <a class="nav-link" href="{{ route('employee.profile') }}"><i class="far fa-user"></i> <span>My
+                        <!-- <a class="nav-link" href="{{ route('employee.profile') }}"><i class="far fa-user"></i> <span>My
                                 Profile</span></a>
-                    </li>
+                    </li> -->
                     <li class="{{ Request::is('employee/colleagues') ? 'active' : '' }}">
                         <a class="nav-link" href="{{ route('employee.colleagues') }}"><i class="fas fa-users"></i> <span>My
                                 Colleagues</span></a>
@@ -190,12 +190,12 @@
                     <span>Employee Salaries</span>
                 </a>
             </li>
-            <li class="{{ Request::is('admin/salary/create*') ? 'active' : '' }}">
+            <!-- <li class="{{ Request::is('admin/salary/create*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('admin.salary.create') }}">
                     <i class="fas fa-plus-circle"></i>
                     <span>Add Salary Record</span>
                 </a>
-            </li>
+            </li> -->
             <li class="{{ Request::is('employee/salary/details*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('employee.salary.details') }}">
                     <i class="fas fa-money-check-alt"></i>

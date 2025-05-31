@@ -25,75 +25,165 @@ class CompanyAdminController extends Controller
     /**
      * Display the company admin dashboard.
      */
-    public function dashboard()
-    {
-        $user = Auth::user();
+    // public function dashboard()
+    // {
+    //     $user = Auth::user();
         
-        try {
-            // Check if user has an employee record
-            if (!$user->employee) {
-                // Get the first company if company_id is not set
-                $companyId = $user->company_id ?? Company::first()?->id;
+    //     try {
+    //         // Check if user has an employee record
+    //         if (!$user->employee) {
+    //             // Get the first company if company_id is not set
+    //             $companyId = $user->company_id ?? Company::first()?->id;
                 
-                if (!$companyId) {
-                    // If no company exists, create a default one
-                    // $company = Company::create([
-                    //     'name' => $user->name . "'s Company",
-                    //     'email' => $user->email,
-                    //     'phone' => '',
-                    //     'website' => '',
-                    //     'address' => '',
-                    //     'status' => 'active',
-                    //     'created_by' => $user->id,
-                    // ]);
-                    // $companyId = $company->id;
-                    // $user->company_id = $companyId;
-                    // $user->save();
-                    Log::info('No company found for this user');
-                }
+    //             if (!$companyId) {
+    //                 // If no company exists, create a default one
+    //                 // $company = Company::create([
+    //                 //     'name' => $user->name . "'s Company",
+    //                 //     'email' => $user->email,
+    //                 //     'phone' => '',
+    //                 //     'website' => '',
+    //                 //     'address' => '',
+    //                 //     'status' => 'active',
+    //                 //     'created_by' => $user->id,
+    //                 // ]);
+    //                 // $companyId = $company->id;
+    //                 // $user->company_id = $companyId;
+    //                 // $user->save();
+    //                 Log::info('No company found for this user');
+    //             }
 
-                // Create a basic employee record
-                $employee = Employee::create([
-                    'user_id' => $user->id,
-                    'company_id' => $companyId,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'department_id' => 1, // Default department
-                    'designation_id' => 1, // Default designation
-                    'gender' => 'other',
-                    'employment_type' => 'full_time',
-                    'joining_date' => now(),
-                    'phone' => '',
-                    'address' => '',
-                    'emergency_contact' => '',
-                    'status' => 'active',
-                    'created_by' => $user->id,
-                ]);
+    //             // Create a basic employee record
+    //             $employee = Employee::create([
+    //                 'user_id' => $user->id,
+    //                 'company_id' => $companyId,
+    //                 'name' => $user->name,
+    //                 'email' => $user->email,
+    //                 'department_id' => 1, // Default department
+    //                 'designation_id' => 1, // Default designation
+    //                 'gender' => 'other',
+    //                 'employment_type' => 'full_time',
+    //                 'joining_date' => now(),
+    //                 'phone' => '',
+    //                 'address' => '',
+    //                 'emergency_contact' => '',
+    //                 'status' => 'active',
+    //                 'created_by' => $user->id,
+    //             ]);
 
-                // Refresh the user's employee relationship
-                $user = \App\Models\User::find($user->id);
-                $user->load('employee');
-            }
+    //             // Refresh the user's employee relationship
+    //             $user = \App\Models\User::find($user->id);
+    //             $user->load('employee');
+    //         }
 
-            // Make sure we have a valid user
-            if (!$user) {
-                throw new \Exception('User not found');
-            }
+    //         // Make sure we have a valid user
+    //         if (!$user) {
+    //             throw new \Exception('User not found');
+    //         }
 
-            // Get the company, either from employee or directly from user
-            $company = $user->company;
+    //         // Get the company, either from employee or directly from user
+    //         $company = $user->company;
             
-            if (!$company) {
-                throw new \Exception('No company found for this user');
+    //         if (!$company) {
+    //             throw new \Exception('No company found for this user');
+    //         }
+
+    //         return view('company-admin.dashboard.index', compact('company'));
+            
+    //     } catch (\Exception $e) {
+    //         Log::error('Error in CompanyAdminController@dashboard: ' . $e->getMessage());
+    //         return redirect()->route('home')->with('error', 'Failed to load dashboard: ' . $e->getMessage());
+    //     }
+    // }
+
+    public function dashboard()
+{
+    $user = Auth::user();
+    
+    try {
+        // Check if user has an employee record
+        if (!$user->employee) {
+            // Get the first company if company_id is not set
+            $companyId = $user->company_id ?? Company::first()?->id;
+            
+            if (!$companyId) {
+                Log::info('No company found for this user');
             }
 
-            return view('company-admin.dashboard.index', compact('company'));
-            
-        } catch (\Exception $e) {
-            Log::error('Error in CompanyAdminController@dashboard: ' . $e->getMessage());
-            return redirect()->route('home')->with('error', 'Failed to load dashboard: ' . $e->getMessage());
+            // Create a basic employee record
+            $employee = Employee::create([
+                'user_id' => $user->id,
+                'company_id' => $companyId,
+                'name' => $user->name,
+                'email' => $user->email,
+                'department_id' => Department::first()?->id ?? 1,
+                'designation_id' => Designation::first()?->id ?? 1,
+                'gender' => 'other',
+                'employment_type' => 'full_time',
+                'joining_date' => now(),
+                'phone' => '',
+                'address' => '',
+                'emergency_contact' => '',
+                'status' => 'active',
+                'created_by' => $user->id,
+            ]);
+
+            // Refresh the user's employee relationship
+            $user = User::find($user->id);
+            $user->load('employee');
         }
+
+        // Get the company
+        $company = $user->company;
+        
+        if (!$company) {
+            throw new \Exception('No company found for this user');
+        }
+
+        // Get total employees
+        $totalEmployees = User::where('company_id', $company->id)->count();
+
+        // Get today's attendance count
+        $todayAttendanceCount = DB::table('attendances as a')
+            ->join('employees as e', 'a.employee_id', '=', 'e.id')
+            ->whereDate('a.created_at', now()->format('Y-m-d'))
+            ->where('e.company_id', $company->id)
+            ->count();
+
+        // Get employees on leave
+        $onLeaveCount = \App\Models\LeaveRequest::whereHas('employee', function($q) use ($company) {
+                $q->where('company_id', $company->id);
+            })
+            ->whereDate('start_date', '<=', now())
+            ->whereDate('end_date', '>=', now())
+            ->where('status', 'approved')
+            ->count();
+
+        // Get department count
+        $departmentCount = Department::where('company_id', $company->id)->count();
+
+        // Get employee distribution by role
+        $roles = User::where('company_id', $company->id)
+            ->select('role', DB::raw('count(*) as total'))
+            ->groupBy('role')
+            ->pluck('total', 'role');
+
+        $companyRoleLabels = $roles->keys()->toArray();
+        $companyRoleData = $roles->values()->toArray();
+
+        return view('company_admin.dashboard', compact(
+            'totalEmployees',
+            'todayAttendanceCount',
+            'onLeaveCount',
+            'departmentCount',
+            'companyRoleLabels',
+            'companyRoleData'
+        ));
+        
+    } catch (\Exception $e) {
+        Log::error('Error in CompanyAdminController@dashboard: ' . $e->getMessage());
+        return redirect()->route('home')->with('error', 'Failed to load dashboard: ' . $e->getMessage());
     }
+}
 
     /**
      * Display module access management page.

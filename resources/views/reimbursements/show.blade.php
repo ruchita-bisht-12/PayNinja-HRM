@@ -130,48 +130,6 @@
                                 {{ $isAdmin ? 'Approve as Admin' : 'Approve as Reporter' }}
                             </button>
                         @endif
-
-                        <!-- Approve Modal -->
-                        <div class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog">
-                                <div class="modal-content">
-                                    <div class="modal-header bg-success text-white">
-                                        <h5 class="modal-title">
-                                            <i class="fas fa-check-circle me-2"></i>Approve Reimbursement
-                                        </h5>
-                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <form id="approveForm" action="{{ route($isReporter ? 'reimbursements.approve-reporter' : 'reimbursements.approve', 
-                                              ['reimbursement' => $reimbursement->id]) }}" 
-                                          method="POST">
-                                        @csrf
-                                        <div class="modal-body">
-                                            <div class="alert alert-info">
-                                                <i class="fas fa-info-circle me-2"></i>
-                                                Please provide any additional remarks for this approval.
-                                            </div>
-                                            <div class="mb-3">
-                                                <label for="approvalRemarks" class="form-label">Remarks <span class="text-danger">*</span></label>
-                                                <textarea name="remarks" id="approvalRemarks" 
-                                                          class="form-control" 
-                                                          rows="3" 
-                                                          placeholder="Enter approval remarks..." 
-                                                          required></textarea>
-                                                <div class="invalid-feedback">Please provide remarks for approval.</div>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                                <i class="fas fa-times me-1"></i> Cancel
-                                            </button>
-                                            <button type="submit" class="btn btn-success">
-                                                <i class="fas fa-check-circle me-1"></i> Confirm Approval
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
                         
                         @if($canReject)
                             <button type="button" class="btn btn-danger mb-2" data-bs-toggle="modal" data-bs-target="#rejectModal">
@@ -182,6 +140,48 @@
 
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approve Modal -->
+    <div class="modal fade" id="approveModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-check-circle me-2"></i>Approve Reimbursement
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="approveForm" action="{{ route($isReporter ? 'reimbursements.approve-reporter' : 'reimbursements.approve', 
+                          ['reimbursement' => $reimbursement->id]) }}" 
+                      method="POST">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Please provide any additional remarks for this approval.
+                        </div>
+                        <div class="mb-3">
+                            <label for="approvalRemarks" class="form-label">Remarks <span class="text-danger">*</span></label>
+                            <textarea name="remarks" id="approvalRemarks" 
+                                    class="form-control" 
+                                    rows="3" 
+                                    placeholder="Enter approval remarks..." 
+                                    required></textarea>
+                            <div class="invalid-feedback">Please provide remarks for approval.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check-circle me-1"></i> Confirm Approval
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
