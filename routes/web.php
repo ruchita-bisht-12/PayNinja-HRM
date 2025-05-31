@@ -111,9 +111,10 @@ Route::middleware(['auth'])->group(function () {
 
     // SuperAdmin Routes (Can manage Companies)
     Route::middleware(['role:superadmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
-        Route::resource('companies', SuperAdminController::class)->except(['show']);
+        Route::resource('companies', SuperAdminController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy', 'show']);
         Route::resource('assign-company-admin', \App\Http\Controllers\SuperAdmin\AssignCompanyAdminController::class)->except(['show']);
         Route::get('assigned-company-admins', [\App\Http\Controllers\SuperAdmin\AssignCompanyAdminController::class, 'index'])->name('assigned-company-admins.index');
+        Route::get('companies/{companyId}/admins', [EmployeeController::class, 'admins'])->name('admins.index');
     });
 
     // Shift Management
@@ -142,6 +143,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('companies/{companyId}/employees/create', [EmployeeController::class, 'create'])->name('employees.create');
         Route::post('companies/{companyId}/employees', [EmployeeController::class, 'store'])->name('employees.store');
         Route::get('companies/{companyId}/employees/{employee}/edit', [EmployeeController::class, 'edit'])->name('employees.edit');
+
+        // Admin Management for Company
+        Route::get('companies/{companyId}/admins', [EmployeeController::class, 'admins'])->name('admins.index');
         Route::put('companies/{companyId}/employees/{employee}', [EmployeeController::class, 'update'])->name('employees.update');
         Route::delete('companies/{companyId}/employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
 
