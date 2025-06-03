@@ -78,10 +78,10 @@
                                     </div>
                                 @endif
 
-                                @if($leaveRequest->status === 'rejected' && $leaveRequest->rejection_reason)
+                                @if($leaveRequest->status === 'rejected' && $leaveRequest->admin_remarks)
                                     <div class="form-group">
                                         <label>Rejection Reason</label>
-                                        <p class="form-control-static">{{ $leaveRequest->rejection_reason }}</p>
+                                        <p class="form-control-static">{{ $leaveRequest->admin_remarks }}</p>
                                     </div>
                                 @endif
                             </div>

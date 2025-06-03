@@ -565,34 +565,66 @@ class LeaveRequestController extends Controller
     {
         // Check if user is admin or company admin
         if (!in_array(Auth::user()->role, ['admin', 'company_admin'])) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized action. Only administrators can reject leave requests.'], 403);
+            }
             abort(403, 'Unauthorized action. Only administrators can reject leave requests.');
         }
         
         // Check if leave request belongs to an employee in the company
         if ($leaveRequest->employee->company_id !== Auth::user()->company_id) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized action.'], 403);
+            }
             abort(403, 'Unauthorized action.');
         }
         
         // Check if leave request is pending
         if ($leaveRequest->status !== 'pending') {
+            $message = 'Only pending leave requests can be rejected.';
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => $message]);
+            }
             return redirect()->route('company.leave-requests.index')
-                ->with('error', 'Only pending leave requests can be rejected.');
+                ->with('error', $message);
         }
         
         $validated = $request->validate([
-            'admin_remarks' => 'required|string',
+            'rejection_reason' => 'required|string',
         ]);
         
-        // Reject leave request
-        $leaveRequest->update([
-            'status' => 'rejected',
-            'admin_remarks' => $validated['admin_remarks'],
-            'approved_by' => Auth::id(),
-            'approved_at' => now(),
-        ]);
-        
-        return redirect()->route('company.leave-requests.index')
-            ->with('success', 'Leave request rejected successfully.');
+        try {
+            // Reject leave request
+            $leaveRequest->update([
+                'status' => 'rejected',
+                'admin_remarks' => $validated['rejection_reason'],
+                'approved_by' => Auth::id(),
+                'approved_at' => now(),
+            ]);
+            
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'Leave request rejected successfully.'
+                ]);
+            }
+            
+            return redirect()->route('company.leave-requests.index')
+                ->with('success', 'Leave request rejected successfully.');
+                
+        } catch (\Exception $e) {
+            \Log::error('Error rejecting leave request: ' . $e->getMessage());
+            
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'An error occurred while rejecting the leave request.'
+                ], 500);
+            }
+            
+            return redirect()->back()
+                ->with('error', 'An error occurred while rejecting the leave request.');
+        }
     }
 
     /**
