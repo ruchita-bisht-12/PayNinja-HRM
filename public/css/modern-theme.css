@@ -406,3 +406,10 @@ body {
     font-size: 1rem;
   }
 }
+
+/* Hide sidebar toggle button on desktop */
+@media (min-width: 1025px) {
+  [data-toggle="sidebar"] {
+    display: none !important;
+  }
+}
