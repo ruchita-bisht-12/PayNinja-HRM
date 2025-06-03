@@ -61,7 +61,9 @@ This repository contains a laravel 12 template that comes pre-configured with au
 8. Start the development server:
     ```bash
     php artisan serve
-    ```
+
+9. Start the development server:
+    ##Chekc laravel project
 
 ### Register a New User
 To register a new user, follow these steps:
