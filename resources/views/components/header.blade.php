@@ -9,12 +9,10 @@
         <div class="d-flex align-items-center">
             <!-- Sidebar Toggle Button -->
       
-            <!-- <a href="#"  data-toggle="sidebar" class="nav-link nav-link-lg me-3 me-lg-4">
+            <a href="#"  data-toggle="sidebar" class="nav-link nav-link-lg me-3 me-lg-4">
                 <i class="fas fa-bars"></i>
-            </a> -->
-            <a href="#"  class="nav-link nav-link-lg me-3 me-lg-4" >
-    <i class="fas fa-bars"></i>
-</a>
+            </a>
+            {{-- <a href="#"  class="nav-link nav-link-lg me-3 me-lg-4" ><i class="fas fa-bars"></i></a> --}}
 
 
             <!-- Brand for Mobile -->

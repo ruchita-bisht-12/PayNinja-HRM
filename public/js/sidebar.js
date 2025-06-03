@@ -12,8 +12,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function toggleSidebar(e) {
         e.preventDefault();
-        document.body.classList.toggle('sidebar-open');
-        overlay.classList.toggle('active');
+        if (document.body.classList.contains('sidebar-open')) {
+            // Closing sidebar
+            document.body.classList.remove('sidebar-open');
+            overlay.classList.remove('active');
+            overlay.style.display = 'none';
+        } else {
+            // Opening sidebar
+            document.body.classList.add('sidebar-open');
+            overlay.style.display = 'block';
+            // Force reflow to enable transition
+            void overlay.offsetWidth;
+            overlay.classList.add('active');
+        }
     }
 
     // Toggle sidebar on button click
@@ -24,8 +35,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // Close sidebar when clicking overlay
     if (overlay) {
         overlay.addEventListener('click', function() {
-            document.body.classList.remove('sidebar-open');
-            overlay.classList.remove('active');
+            if (document.body.classList.contains('sidebar-open')) {
+                document.body.classList.remove('sidebar-open');
+                document.body.classList.remove('sidebar-show');
+                overlay.classList.remove('active');
+                overlay.style.display = 'none';
+            }
         });
     }
 
@@ -33,7 +48,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
             document.body.classList.remove('sidebar-open');
+            document.body.classList.remove('sidebar-show');
             overlay.classList.remove('active');
+            overlay.style.display = 'none';
         }
     });
 
@@ -44,7 +61,9 @@ document.addEventListener('DOMContentLoaded', function() {
         resizeTimer = setTimeout(function() {
             if (window.innerWidth > 1024 && document.body.classList.contains('sidebar-open')) {
                 document.body.classList.remove('sidebar-open');
+                document.body.classList.remove('sidebar-show');
                 overlay.classList.remove('active');
+                overlay.style.display = 'none';
             }
         }, 250);
     });
