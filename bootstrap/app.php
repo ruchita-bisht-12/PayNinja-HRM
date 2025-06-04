@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Register the LoadModuleAccess middleware to run on web routes
+        $middleware->web(\App\Http\Middleware\LoadModuleAccess::class);
+        
         $middleware->alias([
             'superadmin' => \App\Http\Middleware\superadmin::class,
             'role' => \App\Http\Middleware\RoleMiddleware::class,

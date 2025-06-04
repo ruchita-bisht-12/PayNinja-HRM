@@ -265,15 +265,57 @@ class HomeController extends Controller
                 ->whereDate('date', now()->toDateString())
                 ->first();
 
-            // Get leave balance
-            $leaveBalance = $employee->leaveBalance ?? 0;
+            // Get leave balance for the current year
+            $currentYear = now()->year;
+            $totalLeaveBalance = 0;
+            
+            // Get all leave types with their balances
+            $leaveTypes = \App\Models\LeaveType::all()->map(function($leaveType) use ($employee, $currentYear, &$totalLeaveBalance) {
+                $balance = $employee->getLeaveBalance($leaveType->id, $currentYear);
+                $availableDays = $balance ? ($balance->total_days - $balance->used_days) : 0;
+                $totalLeaveBalance += $availableDays;
+                
+                return [
+                    'name' => $leaveType->name,
+                    'total_days' => $balance ? $balance->total_days : 0,
+                    'used_days' => $balance ? $balance->used_days : 0,
+                    'available_days' => $availableDays,
+                    'color' => $this->getLeaveTypeColor($leaveType->name)
+                ];
+            });
+            
+            $leaveBalance = $totalLeaveBalance;
 
             return view('employee.dashboard', compact(
                 'loggedInUser',
                 'todayAttendance',
-                'leaveBalance'
+                'leaveBalance',
+                'leaveTypes'
             ));
         }
+    }
+
+    /**
+     * Get color code for leave type
+     *
+     * @param string $leaveType
+     * @return string
+     */
+    private function getLeaveTypeColor($leaveType)
+    {
+        $colors = [
+            'Sick' => '#ff6b6b',
+            'Casual' => '#4ecdc4',
+            'Earned' => '#45b7d1',
+            'Maternity' => '#ff9ff3',
+            'Paternity' => '#1dd1a1',
+            'Unpaid' => '#ff9f43',
+            'Half Day' => '#feca57',
+            'Comp Off' => '#5f27cd',
+            'LOP' => '#ff6b6b',
+        ];
+
+        return $colors[$leaveType] ?? '#95a5a6';
     }
 
     public function blank()

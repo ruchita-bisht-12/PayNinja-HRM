@@ -16,10 +16,30 @@ use Illuminate\Support\Facades\Log;
 
 class CompanyAdminController extends Controller
 {
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('role:company_admin');
+        
+        // Basic role check for company admin features
+        $this->middleware('role:company_admin,admin');
+        
+        // Restrict module access to company_admin only
+        $this->middleware('role:company_admin')->only(['moduleAccess', 'updateModuleAccess']);
+        
+        // Share company data with all views
+        $this->middleware(function ($request, $next) {
+            if (auth()->check()) {
+                $user = auth()->user();
+                $company = $user->company;
+                view()->share('currentCompany', $company);
+            }
+            return $next($request);
+        });
     }
 
     /**
@@ -199,10 +219,20 @@ class CompanyAdminController extends Controller
             ->groupBy('module_name')
             ->map(function ($moduleGroup) {
                 return $moduleGroup->mapWithKeys(function ($access) {
-                    return [$access->role => $access->has_access];
+                    // Explicitly cast to boolean to ensure proper type
+                    return [$access->role => (bool)$access->has_access];
                 });
             })
             ->toArray();
+        
+        // Log the module access settings for debugging
+        Log::info('Module access settings loaded:', ['modules' => $modules]);
+        
+        // Store modules in session for sidebar access
+        session(['modules' => $modules]);
+        
+        // Force session to save immediately
+        session()->save();
 
         return view('company-admin.module-access.index', compact('modules'));
     }
@@ -217,19 +247,69 @@ class CompanyAdminController extends Controller
             $company = $user->employee->company;
 
             DB::beginTransaction();
+            
+            // Only log essential information
+            Log::info('Module access update initiated by user:', [
+                'user_id' => $user->id,
+                'user_role' => $user->role
+            ]);
 
+            // Get all available module names
+            $allModuleNames = [];
             foreach ($request->input('modules', []) as $moduleName => $roleAccess) {
+                $allModuleNames[] = $moduleName;
                 foreach ($roleAccess as $role => $hasAccess) {
+                    // Convert to boolean explicitly
+                    $hasAccessBool = (bool) $hasAccess;
+                    
+                    // Log each update for debugging
+                    Log::info("Updating module access: {$moduleName} for role {$role} to " . ($hasAccessBool ? 'true' : 'false'));
+                    
                     ModuleAccess::updateOrCreate(
                         [
                             'company_id' => $company->id,
                             'module_name' => $moduleName,
                             'role' => $role,
                         ],
-                        ['has_access' => (bool) $hasAccess]
+                        ['has_access' => $hasAccessBool]
                     );
                 }
             }
+            
+            // Ensure company_admin role always has access to all modules
+            foreach ($allModuleNames as $moduleName) {
+                // Set company_admin access to true
+                ModuleAccess::updateOrCreate(
+                    [
+                        'company_id' => $company->id,
+                        'module_name' => $moduleName,
+                        'role' => 'company_admin',
+                    ],
+                    ['has_access' => true]
+                );
+                
+                Log::info("Ensuring company_admin access for module: {$moduleName}");
+            }
+
+            // Refresh the modules in session after update
+            $modules = ModuleAccess::where('company_id', $company->id)
+                ->get()
+                ->groupBy('module_name')
+                ->map(function ($moduleGroup) {
+                    return $moduleGroup->mapWithKeys(function ($access) {
+                        return [$access->role => (bool)$access->has_access];
+                    });
+                })
+                ->toArray();
+            
+            // Log the session data for debugging
+            Log::info('Updated session modules data:', ['modules' => $modules]);
+            
+            // Store in session
+            session(['modules' => $modules]);
+            
+            // Force session to save immediately
+            session()->save();
 
             DB::commit();
             return redirect()->back()->with('success', 'Module access settings updated successfully.');

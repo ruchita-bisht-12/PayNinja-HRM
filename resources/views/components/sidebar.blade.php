@@ -1,4 +1,23 @@
 @auth
+    @php
+        // Helper function to check if a module is accessible for the current user role
+        function hasModuleAccess($modules, $moduleName, $role) {
+            // Company admin role always has access to all modules
+            if ($role === 'company_admin') {
+                return true;
+            }
+            
+            // For other roles, check module settings if they exist
+            return $modules[$moduleName][$role] ?? true; // Default to true if not set
+        }
+        
+        // Get module access settings from session if available
+        $modules = session('modules', []);
+        $userRole = Auth::user()->role;
+        
+        // Debug information - remove after fixing
+        // dd($modules, $userRole);
+    @endphp
     <div class="main-sidebar sidebar-style-2">
         <aside id="sidebar-wrapper">
             <div class="sidebar-brand">
@@ -42,6 +61,7 @@
                                 Colleagues</span></a>
                     </li>
 
+                    @if(hasModuleAccess($modules, 'attendance', $userRole))
                     <li class="menu-header">Attendance</li>
                     <li class="{{ Request::is('attendance') ? 'active' : '' }}">
                         <a class="nav-link" href="{{ route('attendance.dashboard') }}"><i class="fas fa-clock"></i>
@@ -55,7 +75,9 @@
                         <a class="nav-link" href="{{ route('attendance.my-attendance') }}"><i
                                 class="fas fa-calendar-check"></i> <span>My Attendance</span></a>
                     </li>
+                    @endif
 
+                    @if(hasModuleAccess($modules, 'leave', $userRole))
                     <li class="menu-header">Leave Management</li>
                     <li
                         class="{{ Request::is('leave-management/leave-requests') && !Request::is('leave-management/leave-requests/create') ? 'active' : '' }}">
@@ -70,7 +92,9 @@
                         <a class="nav-link" href="{{ route('leave-management.leave-requests.calendar') }}"><i
                                 class="fas fa-calendar-alt"></i> <span>Leave Calendar</span></a>
                     </li>
+                    @endif
     
+    @if(hasModuleAccess($modules, 'salary', $userRole))
     <li class="menu-header">Salary</li>
     <li class="{{ Request::is('employee/salary/details*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('employee.salary.details') }}">
@@ -86,7 +110,9 @@
         </a>
     </li>
     @endif
+    @endif
     
+                    @if(hasModuleAccess($modules, 'reimbursement', $userRole))
                     <li class="menu-header">Reimbursements</li>
                     <li
                         class="{{ Request::is('reimbursements') && !Request::is('reimbursements/create') ? 'active' : '' }}">
@@ -97,6 +123,7 @@
                         <a class="nav-link" href="{{ route('reimbursements.create') }}"><i class="fas fa-plus-circle"></i>
                             <span>Request Reimbursement</span></a>
                     </li>
+                    @endif
                 @endif
 
                 {{-- Company Admin Routes --}}
@@ -110,10 +137,17 @@
                                 class="fas fa-users"></i> <span>Employee Management</span></a>
                     </li>
 
-                    <li class="{{ Request::is('company-admin/module-access*') ? 'active' : '' }}">
-                        <a class="nav-link" href="{{ route('company-admin.module-access.index') }}"><i
-                                class="fas fa-key"></i> <span>Module Access</span></a>
+                    @if(auth()->user()->role === 'company_admin' || auth()->user()->role === 'admin')
+                    <li class="menu-header">Settings</li>
+                    @if(auth()->user()->role === 'company_admin')
+                    <li class="dropdown {{ Request::is('company-admin/module-access*') ? 'active' : '' }}">
+                        <a href="{{ route('company-admin.module-access.index') }}" class="nav-link">
+                            <i class="fas fa-cogs"></i><span>Module Access</span>
+                        </a>
                     </li>
+                    @endif
+                    @endif
+
                     <li class="{{ Request::is('company/companies/*/employees/create') ? 'active' : '' }}">
                         <a class="nav-link"
                             href="{{ route('company.employees.create', ['companyId' => Auth::user()->company_id]) }}"><i
@@ -122,21 +156,29 @@
                         <a class="nav-link" href="{{ route('company-admin.settings.index') }}"><i class="fas fa-cog"></i>
                             <span>Company Settings</span></a>
                     </li>
+                    @if(hasModuleAccess($modules, 'designations', $userRole))
                     <li class="{{ Request::is('company/designations*') ? 'active' : '' }}">
                         <a class="nav-link" href="{{ route('company.designations.index') }}"><i
                                 class="fas fa-id-badge"></i> <span>Manage Designations</span></a>
+                    @endif
 
+                    @if(hasModuleAccess($modules, 'departments', $userRole))
                     <li class="{{ Request::is('company/departments*') ? 'active' : '' }}">
                         <a class="nav-link" href="{{ route('company.departments.index') }}"><i class="fas fa-building"></i>
                             <span>Manage Departments</span></a>
                     </li>
+                    @endif
 
+                    @if(hasModuleAccess($modules, 'teams', $userRole))
                     <li class="{{ Request::is('company/teams*') ? 'active' : '' }}">
                         <a class="nav-link"
                             href="{{ route('company.teams.index', ['companyId' => Auth::user()->company_id]) }}"><i
                                 class="fas fa-users-cog"></i> <span>Manage Teams</span></a>
                     </li>
+                    @endif
 
+
+                    @if(hasModuleAccess($modules, 'attendance', $userRole))
                     <li class="menu-header">Attendance Management</li>
                     <li class="{{ Request::is('admin/attendance') ? 'active' : '' }}">
                         <a class="nav-link" href="{{ route('admin.attendance.index') }}"><i
@@ -163,7 +205,9 @@
                         <a class="nav-link" href="{{ route('admin.shifts.index') }}"><i class="fas fa-clock"></i>
                             <span>Manage Shifts</span></a>
                     </li>
+                    @endif
 
+                    @if(hasModuleAccess($modules, 'leave', $userRole))
                     <li class="menu-header">Leave Management</li>
                     <li class="{{ Request::is('company/leave-types*') ? 'active' : '' }}">
                         <a class="nav-link" href="{{ route('company.leave-types.index') }}"><i
@@ -182,7 +226,9 @@
                         <a class="nav-link" href="{{ route('company.leave-requests.calendar') }}"><i
                                 class="fas fa-calendar-alt"></i> <span>Leave Calendar</span></a>
                     </li>
+                    @endif
 
+                    @if(hasModuleAccess($modules, 'salary', $userRole))
             <li class="menu-header">Salary Management</li>
             <li class="{{ Request::is('admin/salary*') && !Request::is('admin/salary/create*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('admin.salary.index') }}">
@@ -210,7 +256,9 @@
                 </a>
             </li>
             @endif
+            @endif
 
+            @if(hasModuleAccess($modules, 'reimbursements', $userRole))
             <li class="menu-header">Reimbursements</li>
           
             <li class="{{ Request::is('reimbursements/create') ? 'active' : '' }}">
@@ -219,7 +267,7 @@
             <li class="{{ Request::is('reimbursements') && !Request::is('reimbursements/create') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('reimbursements.index') }}"><i class="fas fa-tasks"></i> <span>Pending Approvals</span></a>
             </li>
-         
+         @endif
            
          
             @endif

@@ -128,19 +128,45 @@
                             <h4>Leave Balance</h4>
                         </div>
                         <div class="card-body">
-                            <div class="row align-items-center">
-                                <div class="col-4 text-center">
-                                    <i class="fas fa-calendar-alt fa-3x text-warning"></i>
-                                </div>
-                                <div class="col-8">
-                                    <div class="mb-2">
-                                        <strong>Available Leaves:</strong>
+                            <div class="leave-balance-summary mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fas fa-calendar-alt text-warning mr-2"></i>
+                                        <strong>Total Available:</strong>
                                         <span class="ml-2">{{ $leaveBalance ?? 0 }} Days</span>
                                     </div>
-                                    <a href="{{ route('employee.leave-requests.index') }}" class="btn btn-sm btn-warning">
-                                        View Leave History
+                                    <a href="{{ route('employee.leave-requests.index') }}" class="btn btn-sm btn-outline-warning">
+                                        <i class="fas fa-history"></i> View History
                                     </a>
                                 </div>
+                            </div>
+                            
+                            <div class="leave-types">
+                                @foreach($leaveTypes as $leave)
+                                <div class="leave-type-item mb-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="leave-type-badge" style="background-color: {{ $leave['color'] }}"></span>
+                                            <span class="leave-type-name">{{ $leave['name'] }}</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="text-muted small">
+                                                {{ $leave['available_days'] }} of {{ $leave['total_days'] }} days
+                                            </span>
+                                            <div class="progress mt-1" style="height: 4px;">
+                                                @php
+                                                    $percentage = $leave['total_days'] > 0 
+                                                        ? ($leave['available_days'] / $leave['total_days']) * 100 
+                                                        : 0;
+                                                @endphp
+                                                <div class="progress-bar" role="progressbar" 
+                                                     style="width: {{ $percentage }}%; background-color: {{ $leave['color'] }}">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                @endforeach
                             </div>
                         </div>
                     </div>

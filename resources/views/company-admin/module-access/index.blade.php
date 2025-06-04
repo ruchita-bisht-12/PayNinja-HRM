@@ -34,25 +34,97 @@
                                         <th>Admin Access</th>
                                         <th>Employee Access</th>
                                         <th>Reporter Access</th>
+                                        <th>Reportee Access</th>
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    <!-- Attendance Management -->
+                                    <tr>
+                                        <td>Attendance Management</td>
+                                        <td>
+                                            <div class="form-check">
+                                                <!-- Hidden field to ensure value is sent even when unchecked -->
+                                                <input type="hidden" name="modules[attendance][admin]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[attendance][admin]" value="1" {{ $modules['attendance']['admin'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[attendance][employee]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[attendance][employee]" value="1" {{ $modules['attendance']['employee'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[attendance][reporter]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[attendance][reporter]" value="1" {{ $modules['attendance']['reporter'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[attendance][reportee]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[attendance][reportee]" value="1" {{ $modules['attendance']['reportee'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+                                    </tr>
+
                                     <!-- Leave Management -->
                                     <tr>
                                         <td>Leave Management</td>
                                         <td>
                                             <div class="form-check">
+                                                <input type="hidden" name="modules[leave][admin]" value="0">
                                                 <input type="checkbox" class="form-check-input" name="modules[leave][admin]" value="1" {{ $modules['leave']['admin'] ?? false ? 'checked' : '' }}>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="form-check">
+                                                <input type="hidden" name="modules[leave][employee]" value="0">
                                                 <input type="checkbox" class="form-check-input" name="modules[leave][employee]" value="1" {{ $modules['leave']['employee'] ?? false ? 'checked' : '' }}>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="form-check">
+                                                <input type="hidden" name="modules[leave][reporter]" value="0">
                                                 <input type="checkbox" class="form-check-input" name="modules[leave][reporter]" value="1" {{ $modules['leave']['reporter'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[leave][reportee]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[leave][reportee]" value="1" {{ $modules['leave']['reportee'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Salary Management -->
+                                    <tr>
+                                        <td>Salary Management</td>
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[salary][admin]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[salary][admin]" value="1" {{ $modules['salary']['admin'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[salary][employee]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[salary][employee]" value="1" {{ $modules['salary']['employee'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[salary][reporter]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[salary][reporter]" value="1" {{ $modules['salary']['reporter'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[salary][reportee]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[salary][reportee]" value="1" {{ $modules['salary']['reportee'] ?? false ? 'checked' : '' }}>
                                             </div>
                                         </td>
                                     </tr>
@@ -62,57 +134,117 @@
                                         <td>Reimbursement</td>
                                         <td>
                                             <div class="form-check">
+                                                <input type="hidden" name="modules[reimbursement][admin]" value="0">
                                                 <input type="checkbox" class="form-check-input" name="modules[reimbursement][admin]" value="1" {{ $modules['reimbursement']['admin'] ?? false ? 'checked' : '' }}>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="form-check">
+                                                <input type="hidden" name="modules[reimbursement][employee]" value="0">
                                                 <input type="checkbox" class="form-check-input" name="modules[reimbursement][employee]" value="1" {{ $modules['reimbursement']['employee'] ?? false ? 'checked' : '' }}>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="form-check">
+                                                <input type="hidden" name="modules[reimbursement][reporter]" value="0">
                                                 <input type="checkbox" class="form-check-input" name="modules[reimbursement][reporter]" value="1" {{ $modules['reimbursement']['reporter'] ?? false ? 'checked' : '' }}>
                                             </div>
                                         </td>
-                                    </tr>
 
-                                    <!-- Team Management -->
-                                    <tr>
-                                        <td>Team Management</td>
                                         <td>
                                             <div class="form-check">
-                                                <input type="checkbox" class="form-check-input" name="modules[team][admin]" value="1" {{ $modules['team']['admin'] ?? false ? 'checked' : '' }}>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="form-check">
-                                                <input type="checkbox" class="form-check-input" name="modules[team][employee]" value="1" {{ $modules['team']['employee'] ?? false ? 'checked' : '' }}>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="form-check">
-                                                <input type="checkbox" class="form-check-input" name="modules[team][reporter]" value="1" {{ $modules['team']['reporter'] ?? false ? 'checked' : '' }}>
+                                                <input type="hidden" name="modules[reimbursement][reportee]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[reimbursement][reportee]" value="1" {{ $modules['reimbursement']['reportee'] ?? false ? 'checked' : '' }}>
                                             </div>
                                         </td>
                                     </tr>
 
-                                    <!-- Department Management -->
+                                    <!-- Teams Management -->
                                     <tr>
-                                        <td>Department Management</td>
+                                        <td>Teams Management</td>
                                         <td>
                                             <div class="form-check">
-                                                <input type="checkbox" class="form-check-input" name="modules[department][admin]" value="1" {{ $modules['department']['admin'] ?? false ? 'checked' : '' }}>
+                                                <input type="hidden" name="modules[teams][admin]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[teams][admin]" value="1" {{ $modules['teams']['admin'] ?? false ? 'checked' : '' }}>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="form-check">
-                                                <input type="checkbox" class="form-check-input" name="modules[department][employee]" value="1" {{ $modules['department']['employee'] ?? false ? 'checked' : '' }}>
+                                                <input type="hidden" name="modules[teams][employee]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[teams][employee]" value="1" {{ $modules['teams']['employee'] ?? false ? 'checked' : '' }}>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="form-check">
-                                                <input type="checkbox" class="form-check-input" name="modules[department][reporter]" value="1" {{ $modules['department']['reporter'] ?? false ? 'checked' : '' }}>
+                                                <input type="hidden" name="modules[teams][reporter]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[teams][reporter]" value="1" {{ $modules['teams']['reporter'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[teams][reportee]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[teams][reportee]" value="1" {{ $modules['teams']['reportee'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Departments Management -->
+                                    <tr>
+                                        <td>Departments Management</td>
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[departments][admin]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[departments][admin]" value="1" {{ $modules['departments']['admin'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[departments][employee]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[departments][employee]" value="1" {{ $modules['departments']['employee'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[departments][reporter]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[departments][reporter]" value="1" {{ $modules['departments']['reporter'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[departments][reportee]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[departments][reportee]" value="1" {{ $modules['departments']['reportee'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Designations Management -->
+                                    <tr>
+                                        <td>Designations Management</td>
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[designations][admin]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[designations][admin]" value="1" {{ $modules['designations']['admin'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[designations][employee]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[designations][employee]" value="1" {{ $modules['designations']['employee'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[designations][reporter]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[designations][reporter]" value="1" {{ $modules['designations']['reporter'] ?? false ? 'checked' : '' }}>
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="hidden" name="modules[designations][reportee]" value="0">
+                                                <input type="checkbox" class="form-check-input" name="modules[designations][reportee]" value="1" {{ $modules['designations']['reportee'] ?? false ? 'checked' : '' }}>
                                             </div>
                                         </td>
                                     </tr>

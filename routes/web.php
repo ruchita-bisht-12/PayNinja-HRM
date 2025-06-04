@@ -275,8 +275,8 @@ Route::get('/debug/attendance', function() {
         Route::get('/pending', [ReimbursementController::class, 'pending'])->name('pending');
     });
 
-    // Company Admin Routes
-    Route::middleware(['role:company_admin'])->prefix('company-admin')->name('company-admin.')->group(function () {
+    // Company Admin Routes - Accessible to both company_admin and admin
+    Route::middleware(['role:company_admin,admin'])->prefix('company-admin')->name('company-admin.')->group(function () {
         // Dashboard
         Route::get('/dashboard', [\App\Http\Controllers\CompanyAdminController::class, 'dashboard'])->name('dashboard');
         
@@ -288,9 +288,11 @@ Route::get('/debug/attendance', function() {
         Route::get('/payslips/export', [\App\Http\Controllers\PayslipController::class, 'exportPayslips'])
             ->name('payslips.export');
 
-        // Module Access Management
-        Route::get('/module-access', [\App\Http\Controllers\CompanyAdminController::class, 'moduleAccess'])->name('module-access.index');
-        Route::put('/module-access', [\App\Http\Controllers\CompanyAdminController::class, 'updateModuleAccess'])->name('module-access.update');
+        // Module Access
+        Route::middleware(['role:company_admin'])->group(function () {
+            Route::get('/module-access', [\App\Http\Controllers\CompanyAdminController::class, 'moduleAccess'])->name('module-access.index');
+            Route::put('/module-access', [\App\Http\Controllers\CompanyAdminController::class, 'updateModuleAccess'])->name('module-access.update');
+        });
 
         // Employee Management
         Route::get('/employees', [\App\Http\Controllers\CompanyAdminController::class, 'employees'])->name('employees.index');
