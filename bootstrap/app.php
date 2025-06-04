@@ -24,7 +24,6 @@ return Application::configure(basePath: dirname(__DIR__))
         // Schedule mark leaves command to run at 9 AM daily
         $schedule->command('attendance:mark-leaves')
             ->dailyAt('19:00')
-            ->everyMinute()
             ->timezone('Asia/Kolkata')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/schedule.log'));
@@ -32,7 +31,6 @@ return Application::configure(basePath: dirname(__DIR__))
         // Schedule mark absent command to run at 7 PM daily
         $schedule->command('attendance:mark-absent')
             ->dailyAt('19:00')
-            ->everyMinute()
             ->timezone('Asia/Kolkata')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/schedule.log'));

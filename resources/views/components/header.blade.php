@@ -31,9 +31,11 @@
             <!-- Quick Actions - Shows on larger screens inline, on mobile in collapse -->
             <div class="quick-actions my-3 my-lg-0 mx-lg-4">
                 <div class="d-grid d-lg-flex gap-2">
+                    @if(!Auth::user()->hasRole(['superadmin']))
                     <a href="{{ route('attendance.check-in') }}" class="btn btn-light">
                         <i class="fas fa-clock me-2"></i> Quick Attendance
                     </a>
+                    @endif
                     @if(Auth::user()->hasRole(['user', 'employee']))
                     <a href="{{ route('reimbursements.create') }}" class="btn btn-light">
                         <i class="fas fa-receipt me-2"></i> New Reimbursement

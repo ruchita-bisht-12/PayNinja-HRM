@@ -3,7 +3,7 @@
 :root {
   --primary-color: #4361ee;
   --secondary-color: #3f37c9;
-  --success-color: #4caf50;
+  --success-color: #4044D5;
   --danger-color: #f72585;
   --warning-color: #ffd60a;
   --info-color: #00b4d8;
@@ -119,14 +119,14 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(118deg, var(--primary-color), var(--secondary-color));
+  background: linear-gradient(118deg, #4044D5, #2f337a);
   border: none;
-  box-shadow: 0 4px 8px rgba(67, 97, 238, 0.3);
+  box-shadow: 0 4px 8px rgba(64, 68, 213, 0.3);
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 12px rgba(67, 97, 238, 0.4);
+  box-shadow: 0 6px 12px rgba(64, 68, 213, 0.4);
 }
 
 /* Form Controls */
@@ -137,8 +137,8 @@ body {
 }
 
 .form-control:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+  border-color: #4044D5;
+  box-shadow: 0 0 0 3px rgba(64, 68, 213, 0.2);
 }
 
 /* Table Styling */
