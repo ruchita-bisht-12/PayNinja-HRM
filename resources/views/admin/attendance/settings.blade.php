@@ -81,14 +81,14 @@
                                 <div class="row mt-3">
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label for="work_hours" class="form-label fw-medium">Work Hours (per day)</label>
+                                            <label for="work_hours" class="form-label fw-medium">Minimum Work Hours (per day)</label>
                                             <div class="input-group">
                                                 <input type="number" class="form-control" id="work_hours" 
                                                        name="work_hours" min="1" max="24" step="0.5"
                                                        value="{{ old('work_hours', $settings ? $settings->work_hours : 8) }}" required>
                                                 <span class="input-group-text">hours</span>
                                             </div>
-                                            <small class="text-muted">Standard working hours per day</small>
+                                            <small class="text-muted">Standard working hours per day(CheckOut before it will be marked as Half Day)</small>
                                         </div>
                                     </div>
                                     <div class="col-md-4">

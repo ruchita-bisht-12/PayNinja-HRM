@@ -608,10 +608,20 @@ public function checkOut(Employee $employee, $location = null, $userLat = null, 
      */
     protected function determineCheckOutStatus(Attendance $attendance, $checkOutTime)
     {
-        // Get office timings
+        // Get office timings and settings
         $officeTimings = $this->getOfficeTimings();
         $checkOut = Carbon::parse($checkOutTime);
         $checkIn = Carbon::parse($attendance->check_in);
+        
+        // Calculate expected check-out time based on check-in + work hours
+        $expectedCheckOut = (clone $checkIn)->addHours($officeTimings->work_hours);
+        
+        // If checking out before completing work hours, mark as Half Day
+        if ($checkOut->lt($expectedCheckOut)) {
+            return 'Half Day';
+        }
+        
+        // Original grace period logic remains for backward compatibility
         $officeEnd = Carbon::parse($checkOut->toDateString() . ' ' . $officeTimings->office_end_time);
         
         // Parse grace period (H:i:s) into a DateInterval
@@ -631,7 +641,7 @@ public function checkOut(Employee $employee, $location = null, $userLat = null, 
             return $attendance->status; // Keep the original status (Present/Late)
         }
         
-        // If checking out after grace period, check if it's a half day
+        // If checking out after grace period, check if it's a half day based on hours worked
         $hoursWorked = $checkOut->diffInHours($checkIn);
         if ($hoursWorked < ($officeTimings->work_hours / 2)) {
             return 'Half Day';
