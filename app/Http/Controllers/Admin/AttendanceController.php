@@ -145,6 +145,18 @@ class AttendanceController extends Controller
     public function edit($id)
     {
         $attendance = Attendance::findOrFail($id);
+        // dd($attendance);
+        // return response()->json($attendance);
+        $attendance = [
+            'id' => $attendance->id,
+            'employee_id' => $attendance->employee_id,
+            'date' => $attendance->date->format('Y-m-d'),
+            'check_in' => $attendance->check_in ? $attendance->check_in->format('H:i') : null,
+            'check_out' => $attendance->check_out ? $attendance->check_out->format('H:i') : null,
+            'status' => $attendance->status,
+            'remarks' => $attendance->remarks
+        ];
+        
         return response()->json($attendance);
     }
 
@@ -166,16 +178,16 @@ class AttendanceController extends Controller
             ->findOrFail($id);
         
         $validated = $request->validate([
-            'employee_id' => [
-                'required',
-                'exists:employees,id',
-                function ($attribute, $value, $fail) use ($companyId) {
-                    $employee = Employee::find($value);
-                    if ($employee && $employee->company_id !== $companyId) {
-                        $fail('The selected employee is invalid.');
-                    }
-                },
-            ],
+            // 'employee_id' => [
+            //     'required',
+            //     'exists:employees,id',
+            //     function ($attribute, $value, $fail) use ($companyId) {
+            //         $employee = Employee::find($value);
+            //         if ($employee && $employee->company_id !== $companyId) {
+            //             $fail('The selected employee is invalid.');
+            //         }
+            //     },
+            // ],
             'date' => 'required|date',
             'check_in' => 'nullable|date_format:H:i',
             'check_out' => 'nullable|date_format:H:i|after_or_equal:check_in',
@@ -226,8 +238,13 @@ class AttendanceController extends Controller
             
         $attendance->delete();
 
-        return redirect()->route('admin.attendance.index')
-            ->with('success', 'Attendance record deleted successfully.');
+        // Return JSON response for AJAX requests
+        if (request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Attendance record deleted successfully.'
+            ]);
+        }
     }
 
     /**

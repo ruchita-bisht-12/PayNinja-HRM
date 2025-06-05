@@ -219,11 +219,11 @@
                                             <div class="form-group">
                                                 <label for="geofence_radius" class="form-label">Allowed Radius (meters)</label>
                                                 <input type="range" class="form-range" id="geofence_radius" 
-                                                       name="geofence_radius" min="50" max="1000" step="10" 
+                                                       name="geofence_radius" min="20" max="1000" step="10" 
                                                        value="{{ $settings->geofence_radius ?? 100 }}"
                                                        {{ isset($settings) && $settings->enable_geolocation ? 'required' : '' }}>
                                                 <div class="d-flex justify-content-between">
-                                                    <small>50m</small>
+                                                    <small>20m</small>
                                                     <span id="radius-value">{{ $settings->geofence_radius ?? 100 }}m</span>
                                                     <small>1000m</small>
                                                 </div>

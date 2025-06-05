@@ -84,7 +84,7 @@
 </section>
 
 <!-- FEATURES SECTION -->
-<section class="section bg-light" id="features">
+{{-- <section class="section bg-light" id="features">
   <div class="container">
     <h2 class="section-title text-center" data-aos="fade-up">Our Features</h2>
     <div class="row g-4">
@@ -117,7 +117,7 @@
       </div>
     </div>
   </div>
-</section>
+</section> --}}
 
 <!-- FOOTER -->
 <footer class="bg-dark text-white text-center py-3">
