@@ -161,12 +161,13 @@
                                                 @php
                                                     $checkIn = \Carbon\Carbon::parse($attendance->check_in);
                                                     $checkOut = \Carbon\Carbon::parse($attendance->check_out);
-                                                    $hours = $checkOut->diffInHours($checkIn);
-                                                    $minutes = $checkOut->diffInMinutes($checkIn) % 60;
+                                                    $hours = $checkIn->diffInHours($checkOut);
+                                                    $minutes = $checkIn->diffInMinutes($checkOut) % 60;
+                                                    // dd($checkIn, $checkOut);
                                                 @endphp
                                                 {{ sprintf('%d:%02d', $hours, $minutes) }} hrs
                                             @else
-                                                <span class="text-muted">-</span>
+                                                <span class="text-muted">-:--</span>
                                             @endif
                                         </td>
                                         <td>
@@ -570,6 +571,7 @@ $(document).ready(function() {
             url: `/admin/attendance/${id}/edit`,
             type: 'GET',
             success: function(response) {
+                console.log(response);
                 // Populate form fields
                 $('#edit_id').val(response.id);
                 $('#edit_date').val(response.date);
@@ -670,7 +672,7 @@ $(document).ready(function() {
                     
                     // Send delete request
                     $.ajax({
-                        url: `/admin/attendance/${id}`,
+                        url: `{{ route('admin.attendance.destroy', ':id') }}`.replace(':id', id),
                         type: 'DELETE',
                         data: {
                             _token: '{{ csrf_token() }}'

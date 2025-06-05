@@ -283,6 +283,11 @@ class CompanyAdminController extends Controller
                 throw new \Exception('User record not found for this employee.');
             }
 
+            // Prevent changing company_admin role
+            if ($employee->user->role === 'company_admin' || $request->role === 'company_admin') {
+                return redirect()->back()->with('error', 'Changing the company_admin role is not allowed.');
+            }
+
             // Update user role
             $employee->user->role = $request->role;
             $employee->user->save();
