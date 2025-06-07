@@ -392,14 +392,15 @@
         var onLeaveCount = {{ $onLeaveCount ?? 0 }};
         var totalEmployees = {{ $totalEmployees ?? 1 }}; // Prevent division by zero
         var accountedFor = presentCount + onLeaveCount;
-        var absentCount = Math.max(0, totalEmployees - accountedFor);
+        var notMarkedCount = Math.max(0, totalEmployees - accountedFor);
+        var absentCount = {{ $absentCount ?? 0 }};
         
         // Log the values for debugging
-        console.log('Present:', presentCount, 'On Leave:', onLeaveCount, 'Absent:', absentCount, 'Total:', totalEmployees);
+        console.log('Present:', presentCount, 'On Leave:', onLeaveCount, 'Not Marked:', notMarkedCount, 'Absent:', absentCount, 'Total:', totalEmployees);
         
-        // Donut chart configuration with three categories
+        // Donut chart configuration with four categories
         var attendanceOptions = {
-            series: [presentCount, onLeaveCount, absentCount],
+            series: [presentCount, onLeaveCount, notMarkedCount, absentCount],
             chart: {
                 type: 'donut',
                 height: 320,
@@ -410,8 +411,8 @@
                     }
                 }
             },
-            labels: ['Present', 'On Leave', 'Absent'],
-            colors: ['#66bb6a', '#ffa726', '#ff5252'],
+            labels: ['Present', 'On Leave', 'Not Marked', 'Absent'],
+            colors: ['#66bb6a', '#ffa726', '#6c757d', '#ff5252'],
             legend: {
                 position: 'bottom',
                 horizontalAlign: 'center',

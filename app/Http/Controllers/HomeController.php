@@ -129,6 +129,7 @@ class HomeController extends Controller
             $today = now()->format('Y-m-d');
             $todayAttendanceCount = DB::table('attendances as a')
                 ->join('employees as e', 'a.employee_id', '=', 'e.id')
+                ->whereNull('a.deleted_at')
                 ->whereDate('a.created_at', $today)
                 ->where('e.company_id', $companyId)
                 ->count();
@@ -213,6 +214,7 @@ class HomeController extends Controller
             $todayAttendanceCount = DB::table('attendances as a')
                 ->join('employees as e', 'a.employee_id', '=', 'e.id')
                 ->whereDate('a.created_at', $today)
+                ->whereNull('a.deleted_at')
                 ->where('e.company_id', $user->company_id)
                 ->count();
                 
@@ -223,13 +225,6 @@ class HomeController extends Controller
                 ->whereDate('start_date', '<=', $today)
                 ->whereDate('end_date', '>=', $today)
                 ->where('status', 'approved')
-                ->count();
-
-            // Get today's attendance count
-            $todayAttendanceCount = DB::table('attendances as a')
-                ->join('employees as e', 'a.employee_id', '=', 'e.id')
-                ->whereDate('a.created_at', $today)
-                ->where('e.company_id', $user->company_id)
                 ->count();
 
             // Get pending leave requests count

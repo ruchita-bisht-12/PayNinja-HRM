@@ -44,6 +44,11 @@
                                             </span>
                                         </td>
                                         <td>
+                                            @if(auth()->user()->role === 'company_admin' || (auth()->user()->role === 'admin' && $employee->user->role !== 'company_admin'))
+                                            <a href="{{ route('company.employees.edit', [$employee->company_id, $employee->id]) }}" class="btn btn-warning btn-sm me-1">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </a>
+                                            @endif
                                             @if($employee->user->role !== 'company_admin')
                                             <button type="button" class="btn btn-primary btn-sm change-role-btn" 
                                                 data-bs-toggle="modal" 

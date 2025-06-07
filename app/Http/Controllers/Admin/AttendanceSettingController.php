@@ -172,7 +172,7 @@ class AttendanceSettingController extends Controller
                 'enable_geolocation' => 'sometimes|boolean',
                 'office_latitude' => 'nullable|required_if:enable_geolocation,1|numeric|between:-90,90',
                 'office_longitude' => 'nullable|required_if:enable_geolocation,1|numeric|between:-180,180',
-                'geofence_radius' => 'nullable|required_if:enable_geolocation,1|numeric|min:50|max:1000',
+                'geofence_radius' => 'nullable|required_if:enable_geolocation,1|numeric|min:20|max:1000',
                 'weekend_days' => 'sometimes|array',
                 'weekend_days.*' => 'sometimes|string|in:Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday'
             ]);
