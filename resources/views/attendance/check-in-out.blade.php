@@ -31,16 +31,34 @@
                                 <div class="card-body p-3">
                                     <div class="row text-center">
                                         <div class="col-4">
-                                            <div class="text-muted small">Office Start</div>
-                                            <div class="h5 mb-0">{{ \Carbon\Carbon::parse($settings->office_start_time)->format('h:i A') }}</div>
+                                            <div class="text-muted small">Check In</div>
+                                            <div class="h5 mb-0">
+                                                @if(isset($todayAttendance) && $todayAttendance && $todayAttendance->check_in)
+                                                    {{ \Carbon\Carbon::parse($todayAttendance->check_in)->format('h:i A') }}
+                                                @else
+                                                    --
+                                                @endif
+                                            </div>
                                         </div>
                                         <div class="col-4 border-start border-end">
-                                            <div class="text-muted small">Office End</div>
-                                            <div class="h5 mb-0">{{ \Carbon\Carbon::parse($settings->office_end_time)->format('h:i A') }}</div>
+                                            <div class="text-muted small">Check Out </div>
+                                            <div class="h5 mb-0">
+                                                @if(isset($todayAttendance) && $todayAttendance && $todayAttendance->check_out)
+                                                    {{ \Carbon\Carbon::parse($todayAttendance->check_out)->format('h:i A') }}
+                                                @else
+                                                    --
+                                                @endif
+                                            </div>
                                         </div>
                                         <div class="col-4">
                                             <div class="text-muted small">Grace Period</div>
-                                            <div class="h5 mb-0">{{ \Carbon\Carbon::parse($settings->grace_period)->format('h:i A') }}</div>
+                                            <div class="h5 mb-0">
+                                                @if(isset($settings) && $settings && $settings->grace_period)
+                                                    {{ \Carbon\Carbon::parse($settings->grace_period)->format('h:i A') }}
+                                                @else
+                                                    --
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
