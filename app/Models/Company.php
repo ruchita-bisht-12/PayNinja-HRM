@@ -34,4 +34,12 @@ class Company extends Model
     {
         return $this->belongsTo(User::class, 'admin_id');
     }
+
+    /**
+     * Get the beneficiary badges defined for this company.
+     */
+    public function beneficiaryBadges()
+    {
+        return $this->hasMany(BeneficiaryBadge::class);
+    }
 }

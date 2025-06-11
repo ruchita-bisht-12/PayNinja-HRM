@@ -24,53 +24,70 @@
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">Available Payslips</h3>
-                            <div class="card-tools">
+                            <h3 class="card-title">Payroll History</h3>
+                            <!-- <div class="card-tools">
                                 <a href="{{ route('employee.salary.details') }}" class="btn btn-default btn-sm">
                                     <i class="fas fa-arrow-left"></i> Back to Salary Details
                                 </a>
-                            </div>
+                            </div> -->
                         </div>
                         <div class="card-body">
-                            @foreach($years as $year => $months)
-                                <div class="card card-primary card-outline">
-                                    <div class="card-header">
-                                        <h4 class="card-title">{{ $year }}</h4>
-                                        <div class="card-tools">
-                                            <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                                                <i class="fas fa-minus"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="row">
-                                            @foreach($months as $month)
-                                                @php
-                                                    $monthYear = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT);
-                                                    $monthName = \Carbon\Carbon::createFromDate($year, $month, 1)->format('F');
-                                                @endphp
-                                                <div class="col-md-3 col-sm-4 col-6 mb-3">
-                                                    <div class="card">
-                                                        <div class="card-body text-center">
-                                                            <h5 class="card-title">{{ $monthName }} {{ $year }}</h5>
-                                                            <div class="btn-group">
-                                                                <a href="{{ route('employee.salary.payslip.view', ['employee' => $employee->id, 'monthYear' => $monthYear]) }}" 
-                                                                   class="btn btn-info btn-sm" target="_blank">
-                                                                    <i class="fas fa-eye"></i> View
-                                                                </a>
-                                                                <a href="{{ route('employee.salary.payslip.download', ['employee' => $employee->id, 'monthYear' => $monthYear]) }}" 
-                                                                   class="btn btn-success btn-sm">
-                                                                    <i class="fas fa-download"></i> Download
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
+                            @if($payslips->isEmpty())
+                                <div class="alert alert-info">
+                                    <i class="icon fas fa-info"></i> No payslips available yet.
                                 </div>
-                            @endforeach
+                            @else
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-hover">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th>Pay Period</th>
+                                                <th>Status</th>
+                                                <th>Gross Salary</th>
+                                                <th>Deductions</th>
+                                                <th>Net Salary</th>
+                                                <th>Payment Date</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($payslips as $payslip)
+                                                <tr>
+                                                    <td>{{ $payslip['pay_period'] }}</td>
+                                                    <td>
+                                                        <span class="badge bg-{{ $payslip['status_color'] }}">
+                                                            {{ ucfirst($payslip['status']) }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-right">₹{{ number_format($payslip['gross_salary'], 2) }}</td>
+                                                    <td class="text-right">₹{{ number_format($payslip['total_deductions'], 2) }}</td>
+                                                    <td class="text-right font-weight-bold">₹{{ number_format($payslip['net_salary'], 2) }}</td>
+                                                    <td>{{ $payslip['payment_date'] ? \Carbon\Carbon::parse($payslip['payment_date'])->format('d M, Y') : 'N/A' }}</td>
+                                                    <td class="text-center">
+                                                        <div class="btn-group">
+                                                            <a href="{{ route('employee.payroll.show', $payslip['id']) }}" 
+                                                               class="btn btn-sm btn-info" 
+                                                               title="View Payslip"
+                                                               target="_blank">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                            <a href="{{ route('employee.payroll.download', $payslip['id']) }}" 
+                                                               class="btn btn-sm btn-success" 
+                                                               title="Download Payslip">
+                                                                <i class="fas fa-download"></i>
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    {{ $payrolls->links() }}
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -84,15 +101,18 @@
         border-top: 3px solid #007bff !important;
         margin-bottom: 20px;
     }
-    .card-title {
-        margin-bottom: 0.5rem;
+    .badge {
+        font-size: 0.8rem;
+        padding: 0.35em 0.65em;
     }
-    .btn-group {
-        display: flex;
-        justify-content: center;
+    .table th {
+        white-space: nowrap;
     }
     .btn-group .btn {
         margin: 0 2px;
+    }
+    .table td {
+        vertical-align: middle;
     }
 </style>
 @endsection

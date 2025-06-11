@@ -50,7 +50,7 @@
                                             <label for="office_start_time" class="form-label">Office Start Time</label>
                                             @php
                                                 // Get the saved value from database
-                                                $officeStart = old('office_start_time', $settings->office_start_time ?? null);
+                                                $officeStart = old('office_start_time', $settings->office_start_time ?? '09:00:00');
                                                 // Convert to H:i format if value exists
                                                 if ($officeStart && strpos($officeStart, ':') !== false) {
                                                     $officeStart = \Carbon\Carbon::createFromFormat('H:i:s', $officeStart)->format('H:i');

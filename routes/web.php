@@ -16,6 +16,14 @@ use App\Http\Controllers\ReimbursementController;
 use App\Http\Controllers\Employee\AttendanceController as EmployeeAttendanceController;
 use App\Http\Controllers\Admin\AttendanceController as AdminAttendanceController;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Admin\PayrollController as AdminPayrollController;
+use App\Http\Controllers\Employee\PayrollController as EmployeePayrollController;
+use App\Http\Controllers\Admin\AttendanceAdjustmentController;
+use App\Http\Controllers\Admin\BeneficiaryBadgeController;
+use App\Http\Controllers\Admin\EmployeePayrollConfigController;
+
+// Test logging route - can be removed after testing
+require __DIR__.'/test-logging.php';
 
 Route::get('/', function () {
     return view('welcome');
@@ -58,6 +66,13 @@ Route::middleware(['auth'])->group(function () {
         // Get geolocation settings
         Route::get('/geolocation-settings', [EmployeeAttendanceController::class, 'getGeolocationSettings'])
             ->name('geolocation-settings');
+    });
+
+    // Employee Payroll Management
+    Route::prefix('employee/payroll')->name('employee.payroll.')->group(function () {
+        Route::get('/', [EmployeePayrollController::class, 'index'])->name('index'); // List my payslips
+        Route::get('/{payroll}', [EmployeePayrollController::class, 'show'])->name('show'); // View a specific payslip
+        Route::get('/{payroll}/download', [EmployeePayrollController::class, 'downloadPayslip'])->name('download'); // Download payslip PDF
     });
 
     // Admin Attendance Management
@@ -137,6 +152,70 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('salary/{employee}', [\App\Http\Controllers\Admin\EmployeeSalaryController::class, 'destroy'])->name('salary.destroy');
     });
 
+    // Admin Payroll Management
+    Route::middleware(['role:admin'])->prefix('admin/payroll')->name('admin.payroll.')->group(function () {
+        Route::get('/', [AdminPayrollController::class, 'index'])->name('index'); // List all payrolls, or payrolls for a company
+
+        // Beneficiary Badges
+        Route::resource('beneficiary-badges', BeneficiaryBadgeController::class)->except(['show']);
+        Route::get('beneficiary-badges/{beneficiary_badge}', [BeneficiaryBadgeController::class, 'show'])->name('beneficiary-badges.show');
+        Route::post('beneficiary-badges/{beneficiary_badge}/apply-to-all', [BeneficiaryBadgeController::class, 'applyToAllEmployees'])->name('beneficiary-badges.apply-to-all');
+        Route::post('beneficiary-badges/{beneficiary_badge}/api/apply-to-all', [BeneficiaryBadgeController::class, 'apiApplyToAllEmployees'])->name('beneficiary-badges.api.apply-to-all');
+
+        // Payroll Settings
+        Route::get('settings', [App\Http\Controllers\Admin\PayrollSettingsController::class, 'edit'])->name('settings.edit');
+        Route::put('settings', [App\Http\Controllers\Admin\PayrollSettingsController::class, 'update'])->name('settings.update');
+        Route::get('/create', [AdminPayrollController::class, 'create'])->name('create'); // Show form to select employees/period for payroll generation
+        Route::post('/', [AdminPayrollController::class, 'store'])->name('store'); // Process payroll generation
+        Route::get('/{payroll}', [AdminPayrollController::class, 'show'])->name('show'); // View a specific payroll details
+        Route::get('/{payroll}/edit', [AdminPayrollController::class, 'edit'])->name('edit'); // Edit a payroll (e.g., adjustments before processing)
+        Route::put('/{payroll}', [AdminPayrollController::class, 'update'])->name('update');
+        Route::patch('/{payroll}/process', [AdminPayrollController::class, 'processPayroll'])->name('process'); // Mark as processed
+        Route::patch('/{payroll}/mark-as-paid', [AdminPayrollController::class, 'markAsPaid'])->name('mark-as-paid'); // Mark as paid
+        Route::patch('/{payroll}/cancel', [AdminPayrollController::class, 'cancel'])->name('cancel'); // Cancel a payroll run
+        Route::delete('/{payroll}', [AdminPayrollController::class, 'destroy'])->name('destroy'); // Delete/cancel a payroll run
+        // e.g., Route::get('/reports', [AdminPayrollController::class, 'reports'])->name('reports');
+
+        // Beneficiary Badges Management (Allowances/Deductions)
+        Route::resource('beneficiary-badges', BeneficiaryBadgeController::class);
+
+        // Employee Payroll Configuration (CTC, Badges)
+        Route::get('employee-configurations', [EmployeePayrollConfigController::class, 'index'])->name('employee-configurations.index');
+        Route::get('employee-configurations/{employee}/edit', [EmployeePayrollConfigController::class, 'edit'])->name('employee-configurations.edit');
+        Route::put('employee-configurations/{employee}', [EmployeePayrollConfigController::class, 'update'])->name('employee-configurations.update');
+        // Set current salary for an employee (with optional employeeSalary parameter)
+        Route::put('employee-configurations/{employee}/set-current/{employeeSalary?}', [EmployeePayrollConfigController::class, 'setCurrent'])->name('employee-configurations.set-current');
+        
+        // Create new salary for employee
+        Route::post('employee-configurations/{employee}/create-salary', [EmployeePayrollConfigController::class, 'createSalary'])->name('employee-configurations.create-salary');
+    });
+
+    // Admin Beneficiary Badges Management
+    Route::middleware(['role:admin'])
+        ->prefix('admin/beneficiary-badges')
+        ->name('admin.beneficiary-badges.') // Ensured trailing dot for consistency
+        ->group(function () {
+            Route::resource('/', App\Http\Controllers\Admin\BeneficiaryBadgeController::class)
+                 ->parameters(['' => 'beneficiary_badge']); // Removed explicit ->names() to use Laravel's default resource naming with group prefix
+            
+            // Apply badge to all employees
+            Route::post('/{beneficiary_badge}/apply-to-all', [App\Http\Controllers\Admin\BeneficiaryBadgeController::class, 'applyToAllEmployees'])
+                ->name('apply-to-all');
+                
+            // API endpoint for applying badge to all employees (AJAX)
+            Route::post('/{beneficiary_badge}/api/apply-to-all', [App\Http\Controllers\Admin\BeneficiaryBadgeController::class, 'apiApplyToAllEmployees'])
+                ->name('api.apply-to-all');
+    });
+
+    // Admin Employee Payroll Configurations Management
+    Route::middleware(['role:admin'])->prefix('admin/employee-payroll-configurations')->name('admin.employee-payroll-configurations.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\EmployeePayrollConfigController::class, 'index'])->name('index');
+        Route::get('/{employee}/edit', [App\Http\Controllers\Admin\EmployeePayrollConfigController::class, 'edit'])->name('edit');
+        Route::put('/{employee}', [App\Http\Controllers\Admin\EmployeePayrollConfigController::class, 'update'])->name('update');
+        Route::put('/{employee}/update-salary', [App\Http\Controllers\Admin\EmployeePayrollConfigController::class, 'updateSalary'])->name('update-salary');
+        // Add other resource routes (create, store, show, destroy) here later if needed
+    });
+
     Route::middleware(['role:admin'])->prefix('company')->name('company.')->group(function () {
         // Employee Management
         Route::get('companies/{companyId}/employees', [EmployeeController::class, 'index'])->name('employees.index');
@@ -172,7 +251,7 @@ Route::middleware(['auth'])->group(function () {
         // Team Management
         Route::get('departments/{department}/employees', [TeamController::class, 'getEmployeesByDepartment'])->name('departments.employees');
         Route::resource('teams', TeamController::class)->except(['show']);
-
+        
         // Leave Management
         Route::resource('leave-types', LeaveTypeController::class);
         

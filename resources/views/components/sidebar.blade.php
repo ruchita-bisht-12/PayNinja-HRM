@@ -72,12 +72,12 @@
                     </li>
     
     <li class="menu-header">Salary</li>
-    <li class="{{ Request::is('employee/salary/details*') ? 'active' : '' }}">
+    <!-- <li class="{{ Request::is('employee/salary/details*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('employee.salary.details') }}">
             <i class="fas fa-money-check-alt"></i>
             <span>Salary Details</span>
         </a>
-    </li>
+    </li> -->
     @if(isset(Auth::user()->employee) && Auth::user()->employee->currentSalary)
     <li class="{{ Request::is('employee/salary/payslips*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('employee.salary.payslips') }}">
@@ -136,6 +136,11 @@
                             href="{{ route('company.teams.index', ['companyId' => Auth::user()->company_id]) }}"><i
                                 class="fas fa-users-cog"></i> <span>Manage Teams</span></a>
                     </li>
+                    <li class="{{ Request::is('company/*/employees*') ? 'active' : '' }}">
+                        <a class="nav-link"
+                            href="{{ route('company.employees.index', ['companyId' => Auth::user()->company_id]) }}"><i
+                                class="fas fa-user-edit"></i> <span>Edit Employees</span></a>
+                    </li>
 
                     <li class="menu-header">Attendance Management</li>
                     <li class="{{ Request::is('admin/attendance') ? 'active' : '' }}">
@@ -183,12 +188,34 @@
                                 class="fas fa-calendar-alt"></i> <span>Leave Calendar</span></a>
                     </li>
 
-            <li class="menu-header">Salary Management</li>
-            <li class="{{ Request::is('admin/salary*') && !Request::is('admin/salary/create*') ? 'active' : '' }}">
+            <!-- <li class="menu-header">Salary Management</li> -->
+            <!-- <li class="{{ Request::is('admin/salary*') && !Request::is('admin/salary/create*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('admin.salary.index') }}">
                     <i class="fas fa-money-bill-wave"></i>
                     <span>Employee Salaries</span>
                 </a>
+            </li> -->
+
+            <li class="menu-header">Payroll Management</li>
+            <li class="nav-item dropdown {{ Request::is('admin/payroll*') ? 'active' : '' }}">
+                <a href="#" class="nav-link has-dropdown"><i class="fas fa-file-invoice-dollar"></i><span>Payroll</span></a>
+                <ul class="dropdown-menu">
+                    <li class="{{ Request::routeIs('admin.payroll.create') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('admin.payroll.create') }}">Generate Payroll</a>
+                    </li>
+                    <li class="{{ Request::routeIs('admin.payroll.index') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('admin.payroll.index') }}">View Payrolls</a>
+                    </li>
+                    <li class="{{ Request::routeIs('admin.payroll.settings.edit') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('admin.payroll.settings.edit') }}">Payroll Settings</a>
+                    </li>
+                    <li class="{{ Request::routeIs('admin.beneficiary-badges.index') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('admin.beneficiary-badges.index') }}"> <span>Beneficiary Badges</span></a>
+                    </li>
+                    <li class="{{ Request::routeIs('admin.employee-payroll-configurations.index') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('admin.employee-payroll-configurations.index') }}"> <span>Employee Payroll Configs</span></a>
+                    </li>
+                </ul>
             </li>
             <!-- <li class="{{ Request::is('admin/salary/create*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('admin.salary.create') }}">
@@ -196,11 +223,11 @@
                     <span>Add Salary Record</span>
                 </a>
             </li> -->
-            <li class="{{ Request::is('employee/salary/details*') ? 'active' : '' }}">
+            <!-- <li class="{{ Request::is('employee/salary/details*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('employee.salary.details') }}">
                     <i class="fas fa-money-check-alt"></i>
                     <span>Salary Details</span>
-                </a>
+                </a> -->
             </li>
             @if(isset(Auth::user()->employee) && Auth::user()->employee->currentSalary)
             <li class="{{ Request::is('employee/salary/payslips*') ? 'active' : '' }}">

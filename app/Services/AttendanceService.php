@@ -884,7 +884,7 @@ public function checkOut(Employee $employee, $location = null, $userLat = null, 
      * @param \Carbon\Carbon|string $date
      * @return bool
      */
-    protected function isWeekend($date)
+    public function isWeekend($date)
     {
         if (is_string($date)) {
             $date = Carbon::parse($date);
@@ -935,7 +935,7 @@ public function checkOut(Employee $employee, $location = null, $userLat = null, 
         return (int)$gracePeriod;
     }
 
-    protected function isHoliday($date)
+    public function isHoliday($date)
     {
 
          // Convert to Carbon instance if it's a string

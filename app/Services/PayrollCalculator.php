@@ -23,12 +23,28 @@ class PayrollCalculator
     public function calculatePayroll(Employee $employee, $startDate, $endDate)
     {
         try {
+            // Log the start of payroll calculation
+            Log::info('Starting payroll calculation', [
+                'employee_id' => $employee->id,
+                'start_date' => $startDate,
+                'end_date' => $endDate
+            ]);
+            
             // Get the employee's current salary
             $salary = $employee->currentSalary;
             
             if (!$salary) {
-                throw new \Exception("No active salary record found for employee ID: {$employee->id}");
+                $msg = "No active salary record found for employee ID: {$employee->id}";
+                Log::error($msg);
+                throw new \Exception($msg);
             }
+            
+            Log::info('Using salary record', [
+                'employee_id' => $employee->id,
+                'salary_id' => $salary->id,
+                'gross_salary' => $salary->gross_salary,
+                'basic_salary' => $salary->basic_salary
+            ]);
             
             // Convert string dates to Carbon instances
             $startDate = Carbon::parse($startDate);
@@ -55,7 +71,20 @@ class PayrollCalculator
             $esiDeduction = $this->calculateEsiDeduction($salary, $grossSalary);
             $professionalTax = $this->calculateProfessionalTax($salary, $grossSalary);
             $tds = $this->calculateTds($salary, $grossSalary);
+            
+            // Calculate leave deductions
+            Log::info('Calculating leave deductions', [
+                'employee_id' => $employee->id,
+                'start_date' => $startDate,
+                'end_date' => $endDate
+            ]);
+            
             $leaveDeductions = $this->calculateLeaveDeductions($employee, $startDate, $endDate, $salary);
+            
+            Log::info('Leave deductions calculated', [
+                'employee_id' => $employee->id,
+                'leave_deductions' => $leaveDeductions
+            ]);
             $lateAttendanceDeductions = $this->calculateLateAttendanceDeductions($employee, $startDate, $endDate, $salary);
             $otherDeductions = $this->calculateOtherDeductions($employee, $startDate, $endDate);
             
@@ -306,21 +335,132 @@ class PayrollCalculator
      */
     private function calculateLeaveDeductions(Employee $employee, Carbon $startDate, Carbon $endDate, EmployeeSalary $salary)
     {
-        // Get unpaid leave days
-        $unpaidLeaveDays = LeaveRequest::where('employee_id', $employee->id)
+        Log::info('Starting calculateLeaveDeductions', [
+            'employee_id' => $employee->id,
+            'start_date' => $startDate->toDateString(),
+            'end_date' => $endDate->toDateString(),
+            'employee_name' => $employee->name
+        ]);
+        
+        // Get company's payroll settings to check deductible leave types
+        $payrollSettings = $employee->company->payrollSetting;
+        
+        if (!$payrollSettings) {
+            Log::warning('No payroll settings found for company', [
+                'company_id' => $employee->company_id,
+                'company_name' => $employee->company->name
+            ]);
+            return 0;
+        }
+        
+        if (empty($payrollSettings->deductible_leave_type_ids)) {
+            Log::info('No deductible leave types configured', [
+                'company_id' => $employee->company_id,
+                'payroll_settings_id' => $payrollSettings->id
+            ]);
+            return 0; // No deductible leave types configured
+        }
+        
+        Log::info('Deductible leave types', [
+            'deductible_leave_type_ids' => $payrollSettings->deductible_leave_type_ids
+        ]);
+        
+        // Get all approved leave requests for deductible leave types within the pay period
+        $leaveRequests = LeaveRequest::where('employee_id', $employee->id)
             ->where('status', 'approved')
-            // ->where('is_paid', false)
+            ->whereIn('leave_type_id', $payrollSettings->deductible_leave_type_ids)
             ->where(function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('start_date', [$startDate, $endDate])
-                    ->orWhereBetween('end_date', [$startDate, $endDate]);
+                    ->orWhereBetween('end_date', [$startDate, $endDate])
+                    ->orWhere(function ($q) use ($startDate, $endDate) {
+                        $q->where('start_date', '<=', $startDate)
+                          ->where('end_date', '>=', $endDate);
+                    });
             })
-            ->count();
+            ->with('leaveType') // Eager load the leaveType relationship
+            ->get();
+            
+        Log::info('Found leave requests', [
+            'employee_id' => $employee->id,
+            'leave_requests_count' => $leaveRequests->count(),
+            'leave_requests' => $leaveRequests->map(function($req) {
+                return [
+                    'id' => $req->id,
+                    'leave_type_id' => $req->leave_type_id,
+                    'leave_type_name' => $req->leaveType->name ?? 'Unknown',
+                    'start_date' => $req->start_date,
+                    'end_date' => $req->end_date,
+                    'status' => $req->status
+                ];
+            })
+        ]);
         
-        // Calculate deduction per day
-        $daysInMonth = Carbon::now()->daysInMonth;
+        $totalDeduction = 0;
+        $daysInMonth = $startDate->daysInMonth;
         $deductionPerDay = $salary->gross_salary / $daysInMonth;
         
-        return $deductionPerDay * $unpaidLeaveDays;
+        Log::info('Deduction calculation parameters', [
+            'gross_salary' => $salary->gross_salary,
+            'days_in_month' => $daysInMonth,
+            'deduction_per_day' => $deductionPerDay
+        ]);
+        
+        foreach ($leaveRequests as $leave) {
+            // Calculate the overlapping days between leave and pay period
+            $leaveStart = Carbon::parse($leave->start_date)->startOfDay();
+            $leaveEnd = Carbon::parse($leave->end_date)->endOfDay();
+            
+            $periodStart = $startDate->copy()->startOfDay();
+            $periodEnd = $endDate->copy()->endOfDay();
+            
+            // Adjust dates to only include the overlapping period
+            $effectiveStart = $leaveStart->gt($periodStart) ? $leaveStart : $periodStart;
+            $effectiveEnd = $leaveEnd->lt($periodEnd) ? $leaveEnd : $periodEnd;
+            
+            // Calculate number of working days in the overlapping period
+            $days = 0;
+            $current = $effectiveStart->copy();
+            $workDays = [];
+            
+            Log::info('Processing leave request', [
+                'leave_id' => $leave->id,
+                'leave_type' => $leave->leaveType->name ?? 'Unknown',
+                'leave_start' => $leaveStart->toDateString(),
+                'leave_end' => $leaveEnd->toDateString(),
+                'period_start' => $periodStart->toDateString(),
+                'period_end' => $periodEnd->toDateString(),
+                'effective_start' => $effectiveStart->toDateString(),
+                'effective_end' => $effectiveEnd->toDateString()
+            ]);
+            
+            while ($current->lte($effectiveEnd)) {
+                // Skip weekends (Saturday = 6, Sunday = 0)
+                if (!in_array($current->dayOfWeek, [0, 6])) {
+                    $days++;
+                    $workDays[] = $current->toDateString();
+                }
+                $current->addDay();
+            }
+            
+            $deductionForThisLeave = $days * $deductionPerDay;
+            $totalDeduction += $deductionForThisLeave;
+            
+            Log::info('Leave deduction calculated', [
+                'leave_id' => $leave->id,
+                'working_days' => $days,
+                'work_days_list' => $workDays,
+                'deduction_per_day' => $deductionPerDay,
+                'deduction_for_this_leave' => $deductionForThisLeave,
+                'running_total_deduction' => $totalDeduction
+            ]);
+        }
+        
+        Log::info('Total leave deductions calculated', [
+            'employee_id' => $employee->id,
+            'total_deduction' => $totalDeduction
+        ]);
+        
+        return $totalDeduction;
     }
     
     /**

@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use App\Models\LeaveRequest;
 use App\Models\EmployeeSalary;
 use App\Models\PayrollRecord;
+use App\Models\EmployeeAttendanceAdjustment;
 
 class Employee extends Model
 {
@@ -79,6 +80,67 @@ class Employee extends Model
                     ->withTimestamps();
     }
 
+    /**
+     * Get the beneficiary badge assignments for the employee.
+     */
+    public function assignedBeneficiaryBadges()
+    {
+        return $this->hasMany(EmployeeBeneficiaryBadge::class);
+    }
+
+    /**
+     * The beneficiary badges that are assigned to the employee.
+     */
+    /**
+     * Get all salary records for the employee.
+     */
+    public function employeeSalaries()
+    {
+        return $this->hasMany(EmployeeSalary::class);
+    }
+
+    public function beneficiaryBadges()
+    {
+        return $this->belongsToMany(BeneficiaryBadge::class, 'employee_beneficiary_badges')
+                    ->using(EmployeeBeneficiaryBadge::class) // Specify the pivot model
+                    ->withPivot([
+                        'id',
+                        'custom_value', 
+                        'custom_calculation_type', 
+                        'custom_based_on', 
+                        'is_applicable', 
+                        'start_date', 
+                        'end_date',
+                        'created_at',
+                        'updated_at'
+                    ])
+                    ->withTimestamps()
+                    ->wherePivot('is_applicable', true);
+    }
+
+    /**
+     * Get all assigned beneficiary badges, including non-applicable ones
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function allBeneficiaryBadges()
+    {
+        return $this->belongsToMany(BeneficiaryBadge::class, 'employee_beneficiary_badges')
+                    ->using(EmployeeBeneficiaryBadge::class)
+                    ->withPivot([
+                        'id',
+                        'custom_value', 
+                        'custom_calculation_type', 
+                        'custom_based_on', 
+                        'is_applicable', 
+                        'start_date', 
+                        'end_date',
+                        'created_at',
+                        'updated_at'
+                    ])
+                    ->withTimestamps();
+    }
+
     // Helper methods
     public function isReporterInTeam(Team $team)
     {
@@ -119,6 +181,21 @@ class Employee extends Model
     public function payrollRecords()
     {
         return $this->hasMany(PayrollRecord::class);
+    }
+
+    public function attendanceAdjustments()
+    {
+        return $this->hasMany(EmployeeAttendanceAdjustment::class);
+    }
+
+    public function halfDays()
+    {
+        return $this->hasMany(EmployeeAttendanceAdjustment::class)->where('type', 'half_day');
+    }
+
+    public function reimbursements()
+    {
+        return $this->hasMany(EmployeeAttendanceAdjustment::class)->where('type', 'reimbursement');
     }
 
     /**
