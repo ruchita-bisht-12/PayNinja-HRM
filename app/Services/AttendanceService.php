@@ -937,27 +937,20 @@ public function checkOut(Employee $employee, $location = null, $userLat = null, 
 
     protected function isHoliday($date)
     {
+        // Convert to Carbon instance if it's a string
+        $date = is_string($date) ? Carbon::parse($date) : $date;
+        $dateString = $date->toDateString();
 
-         // Convert to Carbon instance if it's a string
-    $date = is_string($date) ? Carbon::parse($date) : $date;
-    $dateString = $date->toDateString();
-    
-    return Holiday::where('date', $dateString)
-        ->orWhere(function($query) use ($date) {
-            $query->where('is_recurring', true)
-                ->whereDay('date', $date->day)
-                ->whereMonth('date', $date->month);
-        })
-        ->exists();
-        // $dateString = $date->toDateString();
-        
-        // return Holiday::where('date', $dateString)
-        //     ->orWhere(function($query) use ($date) {
-        //         $query->where('is_recurring', true)
-        //             ->whereDay('date', $date->day)
-        //             ->whereMonth('date', $date->month);
-        //     })
-        //     ->exists();
+        // Get company ID from authenticated user if available
+        $companyId = null;
+        if (\Illuminate\Support\Facades\Auth::check()) {
+            $companyId = \Illuminate\Support\Facades\Auth::user()->company_id;
+        }
+
+        return \App\Models\AcademicHoliday::where('company_id', $companyId)
+            ->whereDate('from_date', '<=', $dateString)
+            ->whereDate('to_date', '>=', $dateString)
+            ->exists();
     }
 
     /**

@@ -103,6 +103,12 @@
                 @if (Auth::user()->hasRole('company_admin') || Auth::user()->hasRole('admin'))
                     <li class="menu-header">Company Management</li>
 
+                    <li class="{{ Request::is('company/*/academic-holidays*') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('company.academic-holidays.index', Auth::user()->company_id) }}">
+                            <i class="fas fa-calendar"></i> 
+                            <span>Academic Holidays</span>
+                        </a>
+                    </li>
 
 
                     <li class="{{ Request::is('company-admin/employees*') ? 'active' : '' }}">
