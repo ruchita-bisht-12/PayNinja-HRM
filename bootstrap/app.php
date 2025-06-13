@@ -4,8 +4,13 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Console\Scheduling\Schedule;
+use App\Console\Commands;
 
 return Application::configure(basePath: dirname(__DIR__))
+    ->withCommands([
+        Commands\MarkAbsentEmployees::class,
+        Commands\MarkLeavesCommand::class,
+    ])
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
@@ -21,7 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withSchedule(function (Schedule $schedule) {
-        // Schedule mark leaves command to run at 9 AM daily
+        // Schedule attendance commands
         $schedule->command('attendance:mark-leaves')
             // ->dailyAt('19:00')
             ->everyMinute()
@@ -29,7 +34,6 @@ return Application::configure(basePath: dirname(__DIR__))
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/schedule.log'));
 
-        // Schedule mark absent command to run at 7 PM daily
         $schedule->command('attendance:mark-absent')
             // ->dailyAt('19:00')
             ->everyMinute()
