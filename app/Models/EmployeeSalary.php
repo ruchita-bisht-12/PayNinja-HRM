@@ -13,6 +13,7 @@ class EmployeeSalary extends Model
     protected $table = 'employee_salaries';
 
     protected $fillable = [
+        'ctc',
         'employee_id',
         'basic_salary',
         'hra',

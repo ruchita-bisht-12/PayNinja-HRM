@@ -61,7 +61,7 @@ class AttendanceController extends Controller
             $query->where('status', $request->status);
         }
 
-        $attendances = $query->paginate(25)->withQueryString();
+        $attendances = $query->paginate(31)->withQueryString();
 
         $departments = Department::orderBy('name')->get();
         $designations = Designation::orderBy('title')->get();

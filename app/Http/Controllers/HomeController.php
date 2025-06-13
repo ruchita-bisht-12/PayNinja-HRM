@@ -260,8 +260,19 @@ class HomeController extends Controller
                 ->whereDate('date', now()->toDateString())
                 ->first();
 
-            // Get leave balance
-            $leaveBalance = $employee->leaveBalance ?? 0;
+            // Calculate total available leave balance
+            $leaveBalance = 0;
+            $currentYear = now()->year;
+            
+            // Get all leave balances for the current year
+            $leaveBalances = $employee->leaveBalances()
+                ->where('year', $currentYear)
+                ->get();
+                
+            // Sum up all available leave days (total_days - used_days)
+            foreach ($leaveBalances as $balance) {
+                $leaveBalance += ($balance->total_days - $balance->used_days);
+            }
 
             return view('employee.dashboard', compact(
                 'loggedInUser',

@@ -1,105 +1,113 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Salary Slip - {{ $salary->employee->name }}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Salary Slip - {{ $employee->name }}</title>
     <style>
         body {
             font-family: 'DejaVu Sans', sans-serif;
-            font-size: 12px;
+            font-size: 13px;
             line-height: 1.4;
             color: #333;
+            margin: 0;
+            padding: 0;
         }
         .payslip-container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #ddd;
+            padding: 30px;
+            border: 1px solid #ccc;
+            background: #fff;
         }
-        .header {
+        .payslip-header {
             text-align: center;
-            margin-bottom: 20px;
             border-bottom: 2px solid #333;
+            margin-bottom: 20px;
             padding-bottom: 10px;
         }
-        .company-name {
-            font-size: 24px;
-            font-weight: bold;
+        .payslip-header h2 {
             margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .payslip-header p {
+            margin: 2px 0;
+            font-size: 13px;
         }
         .payslip-title {
-            font-size: 18px;
-            margin: 15px 0;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
             text-transform: uppercase;
         }
-        .employee-info, .company-info {
-            width: 100%;
-            margin-bottom: 20px;
-        }
-        .info-table {
+        .info-table, .earnings-deductions {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
-        .info-table th, .info-table td {
+        .info-table th, .info-table td,
+        .earnings-deductions th, .earnings-deductions td {
             padding: 8px;
-            border: 1px solid #ddd;
+            border: 1px solid #ccc;
             text-align: left;
         }
         .info-table th {
-            background-color: #f5f5f5;
-            width: 30%;
-        }
-        .earnings-deductions {
-            width: 100%;
-            margin-bottom: 20px;
-            border-collapse: collapse;
-        }
-        .earnings-deductions th, .earnings-deductions td {
-            padding: 8px;
-            border: 1px solid #ddd;
-            text-align: right;
-        }
-        .earnings-deductions th:first-child, .earnings-deductions td:first-child {
-            text-align: left;
+            background: #f9f9f9;
+            width: 25%;
         }
         .earnings-deductions th {
-            background-color: #f5f5f5;
+            background: #f1f1f1;
+            text-align: center;
+        }
+        .earnings-deductions td {
+            text-align: right;
+        }
+        .earnings-deductions td:first-child {
+            text-align: left;
         }
         .total-row {
             font-weight: bold;
-            background-color: #f9f9f9;
+            background: #f9f9f9;
         }
         .net-salary {
+            text-align: right;
             font-size: 16px;
+            font-weight: bold;
             color: #2c3e50;
+            margin: 20px 0;
         }
-        .footer {
-            margin-top: 30px;
-            text-align: center;
+        .footer-note {
             font-size: 11px;
             color: #777;
-            border-top: 1px solid #ddd;
+            text-align: center;
+            border-top: 1px solid #ccc;
             padding-top: 10px;
+            margin-top: 30px;
         }
         .signature {
-            margin-top: 50px;
+            margin-top: 60px;
             text-align: right;
         }
         .signature-line {
             border-top: 1px solid #333;
             display: inline-block;
             width: 200px;
-            margin-top: 40px;
+            margin-top: 10px;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-danger {
+            color: #dc3545;
         }
     </style>
 </head>
 <body>
     <div class="payslip-container">
-        <div class="header">
-            <div class="company-name">{{ 'PayNinja Technology Ltd' }}</div>
-            <div>Flat No. 1003, 10th Floor, Nirmal Tower 26, Barakhamba Road, New Delhi – 110001</div>
-            <div>Phone: +91 9999092616 | +91 9654540842 | Email: info@payninjahr.com</div>
+        <div class="payslip-header">
+            <h2>PayNinja Payment Technology Ltd.</h2>
+            <p>Flat No. 1003, 10th Floor, Nirmal Tower 26, Barakhamba Road, New Delhi – 110001</p>
+            <p>Phone: +91 9999092616 | +91 9654540842 | Email: info@payninjahr.com</p>
         </div>
 
         <div class="payslip-title">Salary Slip for {{ date('F Y', strtotime($monthYear)) }}</div>
@@ -107,81 +115,122 @@
         <table class="info-table">
             <tr>
                 <th>Employee Name</th>
-                <td>{{ $salary->employee->name }}</td>
+                <td>{{ $employee->name }}</td>
                 <th>Employee ID</th>
-                <td>{{ $salary->employee->employee_id ?? 'N/A' }}</td>
+                <td>{{ $employee->employee_id ?? 'N/A' }}</td>
             </tr>
             <tr>
-                <th>Department</th>
-                <td>{{ $salary->employee->department->name ?? 'N/A' }}</td>
-                <th>Designation</th>
-                <td>{{ $salary->employee->designation->name ?? 'N/A' }}</td>
-            </tr>
-            <tr>
-                <th>Joining Date</th>
-                <td>{{ $salary->employee->joining_date ? \Carbon\Carbon::parse($salary->employee->joining_date)->format('d M, Y') : 'N/A' }}</td>
+                <th>Pay Period</th>
+                <td>{{ $payroll->pay_period_start->format('M d, Y') }} - {{ $payroll->pay_period_end->format('M d, Y') }}</td>
                 <th>Payment Date</th>
-                <td>{{ $generatedDate }}</td>
+                <td>{{ $payroll->payment_date ? $payroll->payment_date->format('M d, Y') : 'N/A' }}</td>
             </tr>
             <tr>
-                <th>PAN Number</th>
-                <td>{{ $salary->employee->pan_number ?? 'N/A' }}</td>
-                <th>Bank Account</th>
-                <td>{{ $salary->employee->bank_account_number ?? ($salary->employee->bank_account ?? 'N/A') }}</td>
+                <th>Payslip ID</th>
+                <td>#{{ $payroll->id }}</td>
+                <th>Department</th>
+                <td>{{ $employee->department->name ?? 'N/A' }}</td>
             </tr>
         </table>
 
         <table class="earnings-deductions">
-            <tr>
-                <th style="width: 50%;">Earnings</th>
-                <th style="width: 25%;">Amount (₹)</th>
-                <th style="width: 25%;">Deductions</th>
-                <th style="width: 25%;">Amount (₹)</th>
-            </tr>
-            <tr>
-                <td>Basic Salary</td>
-                <td>{{ number_format($salary->basic_salary, 2) }}</td>
-                <td>PF</td>
-                <td>{{ number_format($salary->pf_deduction, 2) }}</td>
-            </tr>
-            <tr>
-                <td>HRA</td>
-                <td>{{ number_format($salary->hra, 2) }}</td>
-                <td>ESI</td>
-                <td>{{ number_format($salary->esi_deduction, 2) }}</td>
-            </tr>
-            <tr>
-                <td>DA</td>
-                <td>{{ number_format($salary->da, 2) }}</td>
-                <td>Professional Tax</td>
-                <td>{{ number_format($salary->professional_tax, 2) }}</td>
-            </tr>
-            <tr>
-                <td>Other Allowances</td>
-                <td>{{ number_format($salary->other_allowances, 2) }}</td>
-                <td>Loan Deductions</td>
-                <td>{{ number_format($salary->loan_deductions, 2) }}</td>
-            </tr>
-            <tr class="total-row">
-                <td><strong>Total Earnings</strong></td>
-                <td><strong>{{ number_format($salary->gross_salary, 2) }}</strong></td>
-                <td><strong>Total Deductions</strong></td>
-                <td><strong>{{ number_format($salary->total_deductions, 2) }}</strong></td>
-            </tr>
-            <tr class="net-salary">
-                <td colspan="3" style="text-align: right;"><strong>Net Salary Payable</strong></td>
-                <td><strong>₹{{ number_format($salary->net_salary, 2) }}</strong></td>
-            </tr>
+            <thead>
+                <tr>
+                    <th colspan="2">Earnings</th>
+                    <th colspan="2">Deductions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php
+                    // Group items by type
+                    $earnings = collect([
+                        'Basic Salary' => $payroll->basic_salary ?? 0,
+                        'HRA' => $payroll->hra ?? 0,
+                        'DA' => $payroll->da ?? 0,
+                        'Other Allowances' => $payroll->other_allowances ?? 0,
+                        'Bonus' => $payroll->bonus ?? 0,
+                        'Overtime' => $payroll->overtime_earnings ?? 0,
+                    ])->filter(fn($amount) => $amount > 0);
+
+                    $deductions = collect([
+                        'PF' => $payroll->pf_deduction ?? 0,
+                        'ESI' => $payroll->esi_deduction ?? 0,
+                        'Professional Tax' => $payroll->professional_tax ?? 0,
+                        'TDS' => $payroll->tds_deduction ?? 0,
+                        'Loan' => $payroll->loan_deductions ?? 0,
+                        'Other Deductions' => $payroll->other_deductions ?? 0,
+                    ])->filter(fn($amount) => $amount > 0);
+
+                    // Add dynamic items from payroll items
+                    if ($payroll->items && $payroll->items->count() > 0) {
+                        foreach ($payroll->items as $item) {
+                            $amount = $item->amount ?? 0;
+                            if ($amount <= 0) continue;
+
+                            $name = $item->name ?? $item->description ?? 'Other';
+                            
+                            if (in_array($item->type, ['earning', 'allowance', 'bonus', 'overtime', 'reimbursement'])) {
+                                $earnings[$name] = $amount;
+                            } else {
+                                $deductions[$name] = $amount;
+                            }
+                        }
+                    }
+
+
+                    $maxRows = max(count($earnings), count($deductions));
+                    $maxRows = max(1, $maxRows);
+                    $earnings = $earnings->toArray();
+                    $deductions = $deductions->toArray();
+                @endphp
+
+                @for($i = 0; $i < $maxRows; $i++)
+                    <tr>
+                        <td>{{ $i < count($earnings) ? array_keys($earnings)[$i] : '' }}</td>
+                        <td class="text-right">{{ $i < count($earnings) ? number_format(array_values($earnings)[$i], 2) : '' }}</td>
+                        <td>{{ $i < count($deductions) ? array_keys($deductions)[$i] : '' }}</td>
+                        <td class="text-right text-danger">
+                            {{ $i < count($deductions) ? number_format(array_values($deductions)[$i], 2) : '' }}
+                        </td>
+                    </tr>
+                @endfor
+                
+                @if(empty($earnings) && empty($deductions))
+                    <tr>
+                        <td>Basic Salary</td>
+                        <td class="text-right">{{ number_format($payroll->basic_salary ?? 0, 2) }}</td>
+                        <td>No deductions</td>
+                        <td class="text-right">0.00</td>
+                    </tr>
+                @endif
+                
+                <tr class="total-row">
+                    <td><strong>Total Earnings</strong></td>
+                    <td class="text-right"><strong>{{ number_format($payroll->gross_salary ?? 0, 2) }}</strong></td>
+                    <td><strong>Total Deductions</strong></td>
+                    <td class="text-right text-danger"><strong>{{ number_format($payroll->total_deductions ?? 0, 2) }}</strong></td>
+                </tr>
+            </tbody>
         </table>
 
-        <div class="footer">
-            <p>This is a system generated payslip and does not require a signature.</p>
-            <p>For any discrepancies, please contact the HR department within 7 days.</p>
+        <div class="net-salary">
+            Net Salary Payable: ₹{{ number_format($payroll->net_salary ?? 0, 2) }}
         </div>
-        
+
+        @if($payroll->notes)
+            <div style="margin-top: 20px;">
+                <strong>Notes:</strong>
+                <p>{{ $payroll->notes }}</p>
+            </div>
+        @endif
+
         <div class="signature">
             <div class="signature-line"></div>
             <div>Authorized Signatory</div>
+        </div>
+
+        <div class="footer-note">
+            This is a system-generated payslip. For discrepancies, contact HR within 7 days.
         </div>
     </div>
 </body>

@@ -28,13 +28,15 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule) {
         // Schedule attendance commands
         $schedule->command('attendance:mark-leaves')
-            ->dailyAt('19:00')
+            // ->dailyAt('19:00')
+            ->everyMinute()
             ->timezone('Asia/Kolkata')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/schedule.log'));
 
         $schedule->command('attendance:mark-absent')
-            ->dailyAt('19:00')
+            // ->dailyAt('19:00')
+            ->everyMinute()
             ->timezone('Asia/Kolkata')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/schedule.log'));
