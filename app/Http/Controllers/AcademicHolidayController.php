@@ -9,17 +9,21 @@ use App\Exports\AcademicHolidayTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Carbon;
 
 class AcademicHolidayController extends Controller
-{    public function index($companyId)
+{
+    public function index($companyId)
     {
         $company = Company::findOrFail($companyId);
         $holidays = AcademicHoliday::where('company_id', $companyId)
             ->orderBy('from_date')
             ->get();
-            
+
         return view('company.academic-holidays.index', compact('holidays', 'company'));
-    }    public function create($companyId)
+    }
+
+    public function create($companyId)
     {
         $company = Company::findOrFail($companyId);
         return view('company.academic-holidays.create', compact('company'));
@@ -45,10 +49,21 @@ class AcademicHolidayController extends Controller
 
         return redirect()->route('company.academic-holidays.index', $companyId)
             ->with('success', 'Holiday created successfully');
-    }    public function edit($companyId, $id)
+    }
+
+    public function edit($companyId, $id)
     {
         $company = Company::findOrFail($companyId);
         $holiday = AcademicHoliday::findOrFail($id);
+
+        // Explicitly cast from_date and to_date to Carbon instances
+        if ($holiday->from_date && !($holiday->from_date instanceof Carbon)) {
+            $holiday->from_date = Carbon::parse($holiday->from_date);
+        }
+        if ($holiday->to_date && !($holiday->to_date instanceof Carbon)) {
+            $holiday->to_date = Carbon::parse($holiday->to_date);
+        }
+
         return view('company.academic-holidays.create', compact('holiday', 'company'));
     }
 
@@ -76,7 +91,9 @@ class AcademicHolidayController extends Controller
 
         return redirect()->route('company.academic-holidays.index', $companyId)
             ->with('success', 'Holiday deleted successfully');
-    }    public function import(Request $request, $companyId)
+    }
+
+    public function import(Request $request, $companyId)
     {
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv'
@@ -113,7 +130,7 @@ class AcademicHolidayController extends Controller
             if ($skipped > 0) {
                 $message[] = "{$skipped} holidays skipped.";
             }
-            
+
             if (count($errors) > 0) {
                 // If there were some successes but also errors
                 if ($imported > 0) {
