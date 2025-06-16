@@ -35,12 +35,12 @@
         // Function to calculate other components based on basic salary
         function updateSalaryComponents() {
             const basicSalary = parseFloat(document.getElementById('basic_salary').value) || 0;
-            const hra = basicSalary * 0.5; // 50% of basic
-            const da = basicSalary * 0.2;  // 20% of basic
+            // const hra = basicSalary * 0.5; // 50% of basic
+            // const da = basicSalary * 0.2;  // 20% of basic
             
             // Update the display of calculated values
-            document.getElementById('hra-display').textContent = hra.toFixed(2);
-            document.getElementById('da-display').textContent = da.toFixed(2);
+            // document.getElementById('hra-display').textContent = hra.toFixed(2);
+            // document.getElementById('da-display').textContent = da.toFixed(2);
         }
 
         // Function to toggle badge fields based on checkbox state
@@ -167,8 +167,8 @@
                     <div class="col-md-6">
                         <p><strong>Current CTC:</strong> {{ $currentSalary->ctc ? number_format($currentSalary->ctc, 2) : 'Not set' }}</p>
                         <p><strong>Basic Salary:</strong> {{ $currentSalary->basic_salary ? number_format($currentSalary->basic_salary, 2) : 'Not set' }}</p>
-                        <p><strong>HRA:</strong> {{ $currentSalary->hra ? number_format($currentSalary->hra, 2) : 'Not set' }}</p>
-                        <p><strong>DA:</strong> {{ $currentSalary->da ? number_format($currentSalary->da, 2) : 'Not set' }}</p>
+                        <!--<p><strong>HRA:</strong> {{ $currentSalary->hra ? number_format($currentSalary->hra, 2) : 'Not set' }}</p>
+                        <p><strong>DA:</strong> {{ $currentSalary->da ? number_format($currentSalary->da, 2) : 'Not set' }}</p>-->
                         <div class="status-toggle">
                             <form id="statusForm" action="{{ route('admin.payroll.employee-configurations.set-current', ['employee' => $employee->id, 'employeeSalary' => $currentSalary->id]) }}" method="POST">
                                 @csrf
@@ -226,8 +226,8 @@
                                        value="{{ old('basic_salary', $currentSalary->basic_salary) }}" 
                                        step="0.01" min="0" required>
                                 <small class="form-text text-muted">
-                                    HRA (50% of basic): <span id="hra-display">{{ number_format(($currentSalary->basic_salary ?? 0) * 0.5, 2) }}</span> | 
-                                    DA (20% of basic): <span id="da-display">{{ number_format(($currentSalary->basic_salary ?? 0) * 0.2, 2) }}</span>
+                                    <!--HRA (50% of basic): <span id="hra-display">{{ number_format(($currentSalary->basic_salary ?? 0) * 0.5, 2) }}</span> | 
+                                    DA (20% of basic): <span id="da-display">{{ number_format(($currentSalary->basic_salary ?? 0) * 0.2, 2) }}</span>-->
                                 </small>
                             </div>
                         </div>
