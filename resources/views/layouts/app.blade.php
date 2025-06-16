@@ -38,6 +38,7 @@
     <link rel="stylesheet" href="{{ asset('css/components.css') }}">
     <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     <link rel="stylesheet" href="{{ asset('css/modern-theme.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/menu-search.css') }}">
 
     <!-- Additional CSS (if any) -->
     @stack('css')
@@ -78,6 +79,13 @@
     <script src="{{ asset('js/stisla.js') }}"></script>
     <script src="{{ asset('js/scripts.js') }}"></script>
     <script src="{{ asset('js/custom.js') }}"></script>
+    <script src="{{ asset('js/menu-search.js') }}"></script>
+    <script>
+        // Initialize menu search when document is ready
+        $(document).ready(function() {
+            initMenuSearch();
+        });
+    </script>
 
     <!-- Additional JS (if any) -->
     @stack('scripts')

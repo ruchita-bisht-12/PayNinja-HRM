@@ -1,0 +1,33 @@
+.sidebar-search {
+    border-bottom: 1px solid #f9f9f9;
+    margin-bottom: 10px;
+}
+
+.sidebar-search .form-control {
+    background-color: #f4f4f4;
+    border: none;
+    border-radius: 3px;
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.sidebar-search .input-group-text {
+    background-color: #f4f4f4;
+    border: none;
+    color: #6c757d;
+}
+
+/* Add transition for smooth show/hide */
+.main-sidebar .sidebar-menu li {
+    transition: all 0.3s ease;
+}
+
+/* Hide elements when filtered out */
+.main-sidebar .sidebar-menu li.d-none {
+    display: none !important;
+}
+
+/* Keep section headers visible when they have visible children */
+.main-sidebar .sidebar-menu li.menu-header.has-visible-items {
+    display: block !important;
+}
