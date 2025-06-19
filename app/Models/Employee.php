@@ -34,6 +34,7 @@ class Employee extends Model
         'profile_image',
         'created_by',
         'updated_by',
+        'employee_code',
         'status'
     ];
 

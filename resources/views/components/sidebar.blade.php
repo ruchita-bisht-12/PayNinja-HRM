@@ -207,13 +207,13 @@
                                 class="fas fa-calendar-alt"></i> <span>Leave Calendar</span></a>
                     </li>
 
-            <!-- <li class="menu-header">Salary Management</li> -->
-            <!-- <li class="{{ Request::is('admin/salary*') && !Request::is('admin/salary/create*') ? 'active' : '' }}">
+            {{-- <li class="menu-header">Salary Management</li>
+            <li class="{{ Request::is('admin/salary*') && !Request::is('admin/salary/create*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('admin.salary.index') }}">
                     <i class="fas fa-money-bill-wave"></i>
                     <span>Employee Salaries</span>
                 </a>
-            </li> -->
+            </li> --}}
 
             <li class="menu-header">Payroll Management</li>
             <li class="nav-item dropdown {{ Request::is('admin/payroll*') ? 'active' : '' }}">

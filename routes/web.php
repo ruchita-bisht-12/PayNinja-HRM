@@ -24,7 +24,7 @@ use App\Http\Controllers\Admin\BeneficiaryBadgeController;
 use App\Http\Controllers\Admin\EmployeePayrollConfigController;
 
 // Test logging route - can be removed after testing
-require __DIR__.'/test-logging.php';
+require __DIR__ . '/test-logging.php';
 
 Route::get('/', function () {
     return view('welcome');
@@ -53,17 +53,17 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [EmployeeAttendanceController::class, 'dashboard'])->name('dashboard');
         Route::get('/check-in-out', [EmployeeAttendanceController::class, 'checkInOut'])->name('check-in');
         Route::get('/my-attendance', [EmployeeAttendanceController::class, 'myAttendance'])->name('my-attendance');
-        
+
         // Export routes
         Route::get('/export', [EmployeeAttendanceController::class, 'exportAttendance'])->name('export');
         Route::get('/export-pdf', [EmployeeAttendanceController::class, 'exportAttendancePdf'])->name('exportPdf');
-        
+
         // API endpoints for check-in/out
         Route::post('/check-in', [EmployeeAttendanceController::class, 'checkIn'])->name('check-in.post');
         Route::post('/check-out', [EmployeeAttendanceController::class, 'checkOut'])->name('check-out.post');
         Route::get('/summary', [EmployeeAttendanceController::class, 'myAttendanceSummary'])->name('summary');
         Route::get('/check-location', [EmployeeAttendanceController::class, 'checkLocation'])->name('check-location');
-        
+
         // Get geolocation settings
         Route::get('/geolocation-settings', [EmployeeAttendanceController::class, 'getGeolocationSettings'])
             ->name('geolocation-settings');
@@ -87,7 +87,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/import', [AdminAttendanceController::class, 'import'])->name('import');
         Route::get('/export', [AdminAttendanceController::class, 'export'])->name('export');
         Route::get('/template', [AdminAttendanceController::class, 'template'])->name('template');
-        
+
         // Attendance Settings
         Route::get('/settings', [\App\Http\Controllers\Admin\AttendanceSettingController::class, 'index'])
             ->name('settings');
@@ -112,7 +112,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('leave-requests/{leaveRequest}', [LeaveRequestController::class, 'update'])->name('leave-requests.update');
         Route::post('leave-requests/{leaveRequest}/cancel', [LeaveRequestController::class, 'cancel'])->name('leave-requests.cancel');
         Route::get('leave-requests/export', [LeaveRequestController::class, 'employeeExport'])->name('leave-requests.export');
-        
+
         // Leave Balances
         Route::get('leave-balances', [LeaveBalanceController::class, 'employeeBalances'])->name('leave-balances.index');
         Route::get('leave-balances/history', [LeaveBalanceController::class, 'history'])->name('leave-balances.history');
@@ -136,7 +136,7 @@ Route::middleware(['auth'])->group(function () {
     // Shift Management
     Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::resource('shifts', '\App\Http\Controllers\Admin\ShiftController');
-        
+
         // Additional shift routes
         Route::get('shifts/{shift}/assign', '\App\Http\Controllers\Admin\ShiftController@showAssignForm')
             ->name('shifts.assign.show');
@@ -186,7 +186,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('employee-configurations/{employee}', [EmployeePayrollConfigController::class, 'update'])->name('employee-configurations.update');
         // Set current salary for an employee (with optional employeeSalary parameter)
         Route::put('employee-configurations/{employee}/set-current/{employeeSalary?}', [EmployeePayrollConfigController::class, 'setCurrent'])->name('employee-configurations.set-current');
-        
+
         // Create new salary for employee
         Route::post('employee-configurations/{employee}/create-salary', [EmployeePayrollConfigController::class, 'createSalary'])->name('employee-configurations.create-salary');
     });
@@ -197,16 +197,16 @@ Route::middleware(['auth'])->group(function () {
         ->name('admin.beneficiary-badges.') // Ensured trailing dot for consistency
         ->group(function () {
             Route::resource('/', App\Http\Controllers\Admin\BeneficiaryBadgeController::class)
-                 ->parameters(['' => 'beneficiary_badge']); // Removed explicit ->names() to use Laravel's default resource naming with group prefix
-            
+                ->parameters(['' => 'beneficiary_badge']); // Removed explicit ->names() to use Laravel's default resource naming with group prefix
+    
             // Apply badge to all employees
             Route::post('/{beneficiary_badge}/apply-to-all', [App\Http\Controllers\Admin\BeneficiaryBadgeController::class, 'applyToAllEmployees'])
                 ->name('apply-to-all');
-                
+
             // API endpoint for applying badge to all employees (AJAX)
             Route::post('/{beneficiary_badge}/api/apply-to-all', [App\Http\Controllers\Admin\BeneficiaryBadgeController::class, 'apiApplyToAllEmployees'])
                 ->name('api.apply-to-all');
-    });
+        });
 
     // Admin Employee Payroll Configurations Management
     Route::middleware(['role:admin'])->prefix('admin/employee-payroll-configurations')->name('admin.employee-payroll-configurations.')->group(function () {
@@ -262,10 +262,10 @@ Route::middleware(['auth'])->group(function () {
         // Team Management
         Route::get('departments/{department}/employees', [TeamController::class, 'getEmployeesByDepartment'])->name('departments.employees');
         Route::resource('teams', TeamController::class)->except(['show']);
-        
+
         // Leave Management
         Route::resource('leave-types', LeaveTypeController::class);
-        
+
         // Leave Requests
         Route::get('leave-requests', [LeaveRequestController::class, 'adminIndex'])->name('leave-requests.index');
         Route::get('leave-requests/calendar', [LeaveRequestController::class, 'adminCalendar'])->name('leave-requests.calendar');
@@ -275,7 +275,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('leave-requests/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('leave-requests.reject');
         Route::get('leave-requests/export', [LeaveRequestController::class, 'export'])->name('leave-requests.export');
         Route::get('leave-requests/report', [LeaveRequestController::class, 'report'])->name('leave-requests.report');
-        
+
         // Leave Balances
         Route::resource('leave-balances', LeaveBalanceController::class)->except(['show', 'destroy']);
         Route::post('leave-balances/bulk-allocate', [LeaveBalanceController::class, 'bulkAllocate'])->name('leave-balances.bulk-allocate');
@@ -294,31 +294,31 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Debug route for attendance data
-Route::get('/debug/attendance', function() {
-    $user = \App\Models\User::first();
-    $employee = $user->employee;
-    $month = now()->format('Y-m');
-    
-    $attendances = $employee->attendances()
-        ->whereYear('date', '=', date('Y', strtotime($month)))
-        ->whereMonth('date', '=', date('m', strtotime($month)))
-        ->orderBy('date', 'desc')
-        ->get();
-    
-    return response()->json([
-        'employee_id' => $employee->id,
-        'month' => $month,
-        'total_attendances' => $attendances->count(),
-        'attendances' => $attendances->map(function($att) {
-            return [
-                'date' => $att->date,
-                'status' => $att->status,
-                'check_in' => $att->check_in,
-                'check_out' => $att->check_out
-            ];
-        })
-    ]);
-});
+    Route::get('/debug/attendance', function () {
+        $user = \App\Models\User::first();
+        $employee = $user->employee;
+        $month = now()->format('Y-m');
+
+        $attendances = $employee->attendances()
+            ->whereYear('date', '=', date('Y', strtotime($month)))
+            ->whereMonth('date', '=', date('m', strtotime($month)))
+            ->orderBy('date', 'desc')
+            ->get();
+
+        return response()->json([
+            'employee_id' => $employee->id,
+            'month' => $month,
+            'total_attendances' => $attendances->count(),
+            'attendances' => $attendances->map(function ($att) {
+                return [
+                    'date' => $att->date,
+                    'status' => $att->status,
+                    'check_in' => $att->check_in,
+                    'check_out' => $att->check_out
+                ];
+            })
+        ]);
+    });
 
     // Employee Routes
     Route::middleware(['role:user,employee'])->prefix('employee')->name('employee.')->group(function () {
@@ -331,16 +331,16 @@ Route::get('/debug/attendance', function() {
         Route::prefix('salary')->name('salary.')->group(function () {
             Route::get('details', [\App\Http\Controllers\Employee\SalaryController::class, 'details'])->name('details');
             Route::get('monthly/{year}/{month}', [\App\Http\Controllers\Employee\SalaryController::class, 'monthlyDetails'])
-                ->where(['year' => '[0-9]{4}', 'month' => '0[1-9]|1[0-2]' ])
+                ->where(['year' => '[0-9]{4}', 'month' => '0[1-9]|1[0-2]'])
                 ->name('monthly.details');
-                
+
             // PDF Payslip Routes
             Route::get('payslips', [\App\Http\Controllers\PayslipController::class, 'listPayslips'])->name('payslips');
-            
+
             Route::get('payslip/{employee}/{monthYear?}', [\App\Http\Controllers\PayslipController::class, 'showPayslip'])
                 ->where('monthYear', '[0-9]{4}-(0[1-9]|1[0-2])')
                 ->name('payslip.view');
-                
+
             Route::get('payslip/{employee}/{monthYear}/download/{salaryId?}', [\App\Http\Controllers\PayslipController::class, 'downloadPayslip'])
                 ->where('monthYear', '[0-9]{4}-(0[1-9]|1[0-2])')
                 ->where('salaryId', '[0-9]*')
@@ -357,7 +357,7 @@ Route::get('/debug/attendance', function() {
         Route::post('leave-requests/{leaveRequest}/cancel', [LeaveRequestController::class, 'cancel'])->name('leave-requests.cancel');
         Route::get('leave-requests/calendar', [LeaveRequestController::class, 'employeeCalendar'])->name('leave-requests.calendar');
         Route::get('leave-requests/calendar-events', [LeaveRequestController::class, 'employeeCalendarEvents'])->name('leave-requests.calendar-events');
-        
+
         // Leave Balances
         Route::get('leave-balances', [LeaveBalanceController::class, 'employeeBalances'])->name('leave-balances.index');
         Route::get('leave-balances/history', [LeaveBalanceController::class, 'history'])->name('leave-balances.history');
@@ -379,11 +379,11 @@ Route::get('/debug/attendance', function() {
     Route::middleware(['role:company_admin'])->prefix('company-admin')->name('company-admin.')->group(function () {
         // Dashboard
         Route::get('/dashboard', [\App\Http\Controllers\CompanyAdminController::class, 'dashboard'])->name('dashboard');
-        
+
         // Payslips Management
         Route::get('/payslips', [\App\Http\Controllers\PayslipController::class, 'getAllPayslips'])
             ->name('payslips.index');
-            
+
         // Export Payslips
         Route::get('/payslips/export', [\App\Http\Controllers\PayslipController::class, 'exportPayslips'])
             ->name('payslips.export');
@@ -401,5 +401,9 @@ Route::get('/debug/attendance', function() {
         // Company Settings
         Route::get('/settings', [\App\Http\Controllers\CompanyAdminController::class, 'settings'])->name('settings.index');
         Route::put('/settings', [\App\Http\Controllers\CompanyAdminController::class, 'updateSettings'])->name('settings.update');
+
+        // Employee ID Prefix Settings Save
+        Route::post('/settings/save-employee-id-prefix', [\App\Http\Controllers\CompanyAdminController::class, 'saveEmployeeIdPrefix'])->name('settings.save-employee-id-prefix');
+        Route::get('/settings/get-employee-id-prefix', [\App\Http\Controllers\CompanyAdminController::class, 'getEmployeeIdPrefix'])->name('settings.get-employee-id-prefix');
     });
 }); // End of auth middleware group
