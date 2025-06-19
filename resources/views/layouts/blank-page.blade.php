@@ -6,7 +6,7 @@
     <!-- CSS Libraries -->
 @endpush
 
-@section('content')<div class="main-content">
+@section('content')<div class="main-content main-contant-01">
         <section class="section">
             <div class="section-header">
                 <h1>Blank Page</h1>

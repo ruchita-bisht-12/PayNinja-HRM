@@ -95,7 +95,7 @@
 @endpush
 
 @section('content')
-<div class="main-content">
+<div class="main-content main-contant-01">
     <section class="section">
         <div class="section-header">
             <h1>Dashboard Overview</h1>

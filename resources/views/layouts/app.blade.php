@@ -59,7 +59,7 @@
             @include('components.sidebar')
 
             <!-- Main Content -->
-            <div class="main-content">
+            <div class="main-content main-contant-01">
                 @yield('content')
             </div>
 
