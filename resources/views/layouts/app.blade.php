@@ -40,6 +40,9 @@
     <link rel="stylesheet" href="{{ asset('css/modern-theme.css') }}">
     <link rel="stylesheet" href="{{ asset('css/menu-search.css') }}">
 
+    <!-- Daterange picker -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+
     <!-- Additional CSS (if any) -->
     @stack('css')
 
@@ -74,6 +77,7 @@
     <!-- Custom JS Libraries -->
     <script src="{{ asset('library/jquery.nicescroll/dist/jquery.nicescroll.min.js') }}"></script>
     <script src="{{ asset('library/moment/min/moment.min.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 
     <!-- Template JS Files -->
     <script src="{{ asset('js/stisla.js') }}"></script>

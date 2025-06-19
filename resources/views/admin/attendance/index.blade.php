@@ -132,7 +132,7 @@
                                         <td>{{ \Carbon\Carbon::parse($attendance->date)->format('d M Y') }}</td>
                                         <td>
                                             @if($attendance->check_in)
-                                                {{ \Carbon\Carbon::parse($attendance->check_in)->format('h:i A') }}
+                                                {{ \Carbon\Carbon::parse($attendance->check_in)->format('h:i:s A') }}
                                                 @if($attendance->check_in_location)
                                                     <i class="bi bi-geo-alt-fill text-primary ms-1" 
                                                        data-bs-toggle="tooltip" 
@@ -144,7 +144,7 @@
                                         </td>
                                         <td>
                                             @if($attendance->check_out)
-                                                {{ \Carbon\Carbon::parse($attendance->check_out)->format('h:i A') }}
+                                                {{ \Carbon\Carbon::parse($attendance->check_out)->format('h:i:s A') }}
                                                 @if($attendance->check_out_location)
                                                     <i class="bi bi-geo-alt-fill text-primary ms-1" 
                                                        data-bs-toggle="tooltip" 
@@ -415,7 +415,7 @@
                                 <li>Use the template to ensure correct formatting</li>
                                 <li>Required fields: <code>employee_id</code>, <code>date</code>, <code>status</code></li>
                                 <li>Date format: YYYY-MM-DD</li>
-                                <li>Time format: HH:MM (24-hour format)</li>
+                                <li>Time format: HH:MM:SS (24-hour format)</li>
                                 <li>Valid status values: Present, Absent, Late, On Leave, Half Day</li>
                             </ol>
                         </div>
