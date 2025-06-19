@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use App\Models\EmployeeIdPrefix;
 
 class CompanyAdminController extends Controller
 {
@@ -20,6 +22,56 @@ class CompanyAdminController extends Controller
     {
         $this->middleware('auth');
         $this->middleware('role:company_admin');
+    }
+
+    /**
+     * Save employee ID prefix settings.
+     */
+    public function saveEmployeeIdPrefix(Request $request)
+    {
+        $user = $request->user();
+        $company = $user->employee->company;
+
+        $validated = $request->validate([
+            'prefix' => 'required|string|max:255',
+            'padding' => 'required|integer|min:0',
+            'start' => 'required|integer|min:0',
+            'employment_type' => 'nullable|string|in:permanent,trainee',
+        ]);
+
+        $employmentType = $validated['employment_type'] ?? '';
+
+        if ($employmentType === '') {
+            // Save two entries for permanent and trainee
+            EmployeeIdPrefix::updateOrCreate(
+                ['company_id' => $company->id, 'employment_type' => 'permanent'],
+                [
+                    'prefix' => $validated['prefix'],
+                    'padding' => $validated['padding'],
+                    'start' => $validated['start'],
+                ]
+            );
+            EmployeeIdPrefix::updateOrCreate(
+                ['company_id' => $company->id, 'employment_type' => 'trainee'],
+                [
+                    'prefix' => $validated['prefix'],
+                    'padding' => $validated['padding'],
+                    'start' => $validated['start'],
+                ]
+            );
+        } else {
+            // Save single entry for specified employment type
+            EmployeeIdPrefix::updateOrCreate(
+                ['company_id' => $company->id, 'employment_type' => $employmentType],
+                [
+                    'prefix' => $validated['prefix'],
+                    'padding' => $validated['padding'],
+                    'start' => $validated['start'],
+                ]
+            );
+        }
+
+        return redirect()->back()->with('success', 'Employee ID prefix settings saved successfully.');
     }
 
     /**
@@ -315,9 +367,77 @@ class CompanyAdminController extends Controller
         return view('company-admin.employees.create', compact('company', 'departments', 'designations'));
     }
 
-    /**
-     * Store a newly created employee in storage.
-     */
+    private function generateEmployeeCode($company, $employmentType = null)
+    {
+        // If employment type is not provided, use default format
+        if (!$employmentType) {
+            $prefix = '#' . strtoupper(substr($company->name, 0, 3)) . '000';
+            $lastEmployee = Employee::where('company_id', $company->id)
+                ->whereNotNull('employee_code')
+                ->where('employee_code', 'like', $prefix.'%')
+                ->orderBy('id', 'desc')
+                ->first();
+
+            $nextNumber = 1;
+            if ($lastEmployee) {
+                $numericPart = (int) substr($lastEmployee->employee_code, -3);
+                $nextNumber = $numericPart + 1;
+            }
+            return substr($prefix, 0, -3) . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
+        }
+
+        // Get the prefix settings for the company
+        $prefixSettings = EmployeeIdPrefix::where('company_id', $company->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // If no prefix settings found, use default
+        if ($prefixSettings->isEmpty()) {
+            return '#' . strtoupper(substr($company->name, 0, 3)) . str_pad('1', 3, '0', STR_PAD_LEFT);
+        }
+
+        // Check if we have a common prefix (both types have same settings)
+        if ($prefixSettings->count() == 2) {
+            $permanent = $prefixSettings->where('employment_type', 'permanent')->first();
+            $trainee = $prefixSettings->where('employment_type', 'trainee')->first();
+
+            if ($permanent->prefix === $trainee->prefix && 
+                $permanent->padding === $trainee->padding && 
+                $permanent->start === $trainee->start) {
+                // Use common settings
+                $prefixSetting = $permanent;
+            } else {
+                // Use type-specific settings
+                $prefixSetting = $prefixSettings->where('employment_type', $employmentType)->first();
+            }
+        } else {
+            // Only one type exists, check if it matches the employee type
+            $prefixSetting = $prefixSettings->first();
+            if ($prefixSetting->employment_type !== $employmentType && $prefixSettings->count() == 1) {
+                // If settings don't exist for this employment type, use default
+                return '#' . strtoupper(substr($company->name, 0, 3)) . str_pad('1', 3, '0', STR_PAD_LEFT);
+            }
+        }
+
+        // Get the last employee number for this prefix
+        $lastEmployee = Employee::where('company_id', $company->id)
+            ->where('employee_code', 'LIKE', $prefixSetting->prefix . '%')
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $nextNumber = $prefixSetting->start;
+        if ($lastEmployee) {
+            // Extract the number from the last employee code
+            $lastNumber = intval(substr($lastEmployee->employee_code, strlen($prefixSetting->prefix)));
+            $nextNumber = $lastNumber + 1;
+        }
+
+        // Format the number according to padding settings
+        $formattedNumber = str_pad($nextNumber, $prefixSetting->padding, '0', STR_PAD_LEFT);
+        
+        return $prefixSetting->prefix . $formattedNumber;
+    }
+
     public function storeEmployee(Request $request)
     {
         $user = Auth::user();
@@ -327,58 +447,61 @@ class CompanyAdminController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:8|confirmed',
+            'phone' => 'required|string|max:20',
             'department_id' => 'required|exists:departments,id',
             'designation_id' => 'required|exists:designations,id',
-            'phone' => 'nullable|string|max:20',
-            'gender' => 'required|in:male,female,other',
-            'employment_type' => 'required|in:full_time,part_time,contract,intern',
+            'employment_type' => 'required|in:permanent,trainee',
             'joining_date' => 'required|date',
-            'address' => 'nullable|string',
+            'gender' => 'required|in:male,female,other',
+            'address' => 'required|string',
             'emergency_contact' => 'nullable|string|max:20',
         ]);
 
         try {
             DB::beginTransaction();
 
-            // Create user
+            // Create user account
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-                'role' => 'employee',
+                'password' => Hash::make(Str::random(10)), // Random password, user will need to reset
                 'company_id' => $company->id,
+                'status' => 'active',
             ]);
 
-            // Create employee
+            // Create employee record
             $employee = Employee::create([
                 'user_id' => $user->id,
                 'company_id' => $company->id,
-                'department_id' => $validated['department_id'],
-                'designation_id' => $validated['designation_id'],
+                'employee_code' => $this->generateEmployeeCode($company, $validated['employment_type']),
                 'name' => $validated['name'],
                 'email' => $validated['email'],
-                'phone' => $validated['phone'] ?? null,
-                'gender' => $validated['gender'],
+                'phone' => $validated['phone'],
+                'department_id' => $validated['department_id'],
+                'designation_id' => $validated['designation_id'],
                 'employment_type' => $validated['employment_type'],
                 'joining_date' => $validated['joining_date'],
-                'address' => $validated['address'] ?? null,
-                'emergency_contact' => $validated['emergency_contact'] ?? null,
+                'gender' => $validated['gender'],
+                'address' => $validated['address'],
+                'emergency_contact' => $validated['emergency_contact'],
                 'status' => 'active',
                 'created_by' => Auth::id(),
             ]);
 
             DB::commit();
 
+            // Send welcome email with password reset link
+            // TODO: Implement welcome email
+
             return redirect()->route('company-admin.employees.index')
                 ->with('success', 'Employee created successfully.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Error creating employee: ' . $e->getMessage());
+            Log::error('Error in CompanyAdminController@storeEmployee: ' . $e->getMessage());
             return redirect()->back()
-                ->withInput()
-                ->with('error', 'Error creating employee. Please try again.');
+                ->with('error', 'Failed to create employee: ' . $e->getMessage())
+                ->withInput();
         }
     }
 
@@ -389,7 +512,7 @@ class CompanyAdminController extends Controller
     {
         $user = Auth::user();
         $company = $user->employee->company;
-        
+
         return view('company-admin.settings.index', compact('company'));
     }
 
@@ -417,5 +540,43 @@ class CompanyAdminController extends Controller
             Log::error('Error updating company settings: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error updating company settings.');
         }
+    }
+
+    /**
+     * Get employee ID prefix settings.
+     */
+    public function getEmployeeIdPrefix(Request $request)
+    {
+        $user = $request->user();
+        $company = $user->employee->company;
+
+        $prefixes = EmployeeIdPrefix::where('company_id', $company->id)->get();
+        
+        if ($prefixes->isEmpty()) {
+            return response()->json([
+                'status' => 'empty',
+                'data' => null
+            ]);
+        }
+
+        // Check if both employment types have the same settings
+        if ($prefixes->count() == 2) {
+            $permanent = $prefixes->where('employment_type', 'permanent')->first();
+            $trainee = $prefixes->where('employment_type', 'trainee')->first();
+
+            if ($permanent->prefix === $trainee->prefix && 
+                $permanent->padding === $trainee->padding && 
+                $permanent->start === $trainee->start) {
+                return response()->json([
+                    'status' => 'common',
+                    'data' => $permanent
+                ]);
+            }
+        }
+
+        return response()->json([
+            'status' => 'specific',
+            'data' => $prefixes->keyBy('employment_type')
+        ]);
     }
 }
