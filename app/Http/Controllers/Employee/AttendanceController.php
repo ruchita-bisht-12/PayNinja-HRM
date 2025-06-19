@@ -79,19 +79,14 @@ class AttendanceController extends Controller
         }
 
         $today = now()->toDateString(); // Using Carbon instance for date logic
-        \Log::debug('Today Date :', ['today' => $today]);
         // Check if today is a weekend using the service
         $isWeekend = $this->attendanceService->isWeekend($today);
-        \Log::debug('isWeekend :', ['isWeekend' => $isWeekend]);
 
         $todayAttendance = $employee->attendances()
             ->whereDate('date', $today)
             ->first();
-        \Log::debug('Today Attendance :', ['todayAttendance' => $todayAttendance]);
         // Get attendance settings
         $settings = $this->attendanceService->getAttendanceSettings();
-        \Log::debug('Settings :', ['settings' => $settings]);
-
         return view('attendance.check-in-out', [
             'todayAttendance' => $todayAttendance,
             'settings' => $settings,

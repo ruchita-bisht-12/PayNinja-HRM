@@ -133,10 +133,10 @@
                         <a class="nav-link" href="{{ route('company-admin.module-access.index') }}"><i
                                 class="fas fa-key"></i> <span>Module Access</span></a>
                     </li>
-                    <li class="{{ Request::is('company/companies/*/employees/create') ? 'active' : '' }}">
+                    <!-- <li class="{{ Request::is('company/companies/*/employees/create') ? 'active' : '' }}">
                         <a class="nav-link"
                             href="{{ route('company.employees.create', ['companyId' => Auth::user()->company_id]) }}"><i
-                                class="fas fa-user-plus"></i> <span>Add Employee</span></a>
+                                class="fas fa-user-plus"></i> <span>Add Employee</span></a> -->
                     <li class="{{ Request::is('company-admin/settings*') ? 'active' : '' }}">
                         <a class="nav-link" href="{{ route('company-admin.settings.index') }}"><i class="fas fa-cog"></i>
                             <span>Company Settings</span></a>
@@ -155,11 +155,11 @@
                             href="{{ route('company.teams.index', ['companyId' => Auth::user()->company_id]) }}"><i
                                 class="fas fa-users-cog"></i> <span>Manage Teams</span></a>
                     </li>
-                    <li class="{{ Request::is('company/*/employees*') ? 'active' : '' }}">
+                    <!-- <li class="{{ Request::is('company/*/employees*') ? 'active' : '' }}">
                         <a class="nav-link"
                             href="{{ route('company.employees.index', ['companyId' => Auth::user()->company_id]) }}"><i
                                 class="fas fa-user-edit"></i> <span>Edit Employees</span></a>
-                    </li>
+                    </li> -->
 
                     <li class="menu-header">Attendance Management</li>
                     <li class="{{ Request::is('admin/attendance') ? 'active' : '' }}">
