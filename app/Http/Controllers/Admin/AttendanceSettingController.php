@@ -22,7 +22,6 @@ class AttendanceSettingController extends Controller
             ->latest('updated_at')
             ->withoutGlobalScopes()
             ->first();
-
         // Set default values if settings don't exist
         if (!$settings) {
             $settings = new AttendanceSetting([
@@ -34,12 +33,12 @@ class AttendanceSettingController extends Controller
                 'office_longitude' => '77.165363',
                 'geofence_radius' => 100,
                 'company_id' => $companyId,
-                'weekend_days' => json_encode(['Saturday', 'Sunday']),
+                'weekend_days' => json_encode(['Saturday', 'Sunday', 'saturday_1_3', 'saturday_2_4', 'saturday_1_3_5']),
                 'created_by' => Auth::id()
             ]);
             $settings->save();
         }
-
+        // echo "<pre>";print_r($settings);die;
         // Only fetch the current company, not all companies
         $company = Company::findOrFail($companyId);
         
@@ -174,7 +173,6 @@ class AttendanceSettingController extends Controller
                 'office_longitude' => 'nullable|required_if:enable_geolocation,1|numeric|between:-180,180',
                 'geofence_radius' => 'nullable|required_if:enable_geolocation,1|numeric|min:20|max:1000',
                 'weekend_days' => 'sometimes|array',
-                'weekend_days.*' => 'sometimes|string|in:Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday'
             ]);
 
             // Convert boolean fields
@@ -256,7 +254,10 @@ class AttendanceSettingController extends Controller
             $validated = $validator->validated();
             
             // Process weekend days
-            $validWeekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            $validWeekDays = [
+                'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
+                'saturday_1_3', 'saturday_2_4', 'saturday_1_3_5'
+            ];
             $validated['weekend_days'] = array_values(array_unique(
                 array_filter((array)($validated['weekend_days'] ?? []), function($day) use ($validWeekDays) {
                     $day = trim($day);

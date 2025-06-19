@@ -87,7 +87,11 @@
                 
                 <!-- Check In/Out Buttons -->
                 <div class="d-grid gap-3 col-md-8 mx-auto">
-                    @if(!$todayAttendance || !$todayAttendance->check_in)
+                    @if($isWeekend)
+                        <div class="alert alert-info">
+                            <strong>Today is a weekend. Enjoy your day off!</strong>
+                        </div>
+                    @elseif(!$todayAttendance || !$todayAttendance->check_in)
                         <button id="checkInBtn" class="btn btn-primary btn-lg" {{ $settings->enable_geolocation ? 'disabled' : '' }}>
                             <i class="bi bi-box-arrow-in-right me-2"></i> Check In
                         </button>
