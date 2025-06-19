@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'User Dashboard')
 @section('content')
-<div class="main-content">
+<div class="main-content main-contant-01">
     <section class="section">
         <div class="section-header">
             <h1>User Dashboard</h1>

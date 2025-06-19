@@ -73,23 +73,25 @@ class AttendanceController extends Controller
     {
         $user = Auth::user();
         $employee = $user->employee;
-        
+
         if (!$employee) {
             return redirect()->route('home')->with('error', 'Employee record not found.');
         }
 
-        $today = now()->toDateString();
-        
+        $today = now()->toDateString(); // Using Carbon instance for date logic
+        // Check if today is a weekend using the service
+        $isWeekend = $this->attendanceService->isWeekend($today);
+
         $todayAttendance = $employee->attendances()
             ->whereDate('date', $today)
             ->first();
-            
         // Get attendance settings
         $settings = $this->attendanceService->getAttendanceSettings();
-
         return view('attendance.check-in-out', [
             'todayAttendance' => $todayAttendance,
-            'settings' => $settings
+            'settings' => $settings,
+            'isWeekend' => $isWeekend,
+            'today' => $today,
         ]);
     }
     

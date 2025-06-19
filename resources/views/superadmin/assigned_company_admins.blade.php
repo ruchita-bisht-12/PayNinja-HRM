@@ -3,7 +3,7 @@
 @section('title', 'Assigned Company Admins')
 
 @section('content')
-<div class="main-content">
+<div class="main-content-01">
     <section class="section">
         <div class="section-header d-flex justify-content-between align-items-center">
             <h1>Assigned Company Admins</h1>

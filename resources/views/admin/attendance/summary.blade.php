@@ -210,14 +210,58 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Toggle icon rotation when department is expanded/collapsed
+        // Initialize all collapses
+        const collapses = document.querySelectorAll('.collapse');
+        
+        // Handle department header clicks
         document.querySelectorAll('.department-header').forEach(header => {
-            header.addEventListener('click', function() {
-                const icon = this.querySelector('.toggle-icon');
-                if (icon) {
-                    icon.classList.toggle('bi-chevron-right');
-                    icon.classList.toggle('bi-chevron-down');
+            const targetId = header.getAttribute('data-bs-target');
+            const targetCollapse = document.querySelector(targetId);
+            const icon = header.querySelector('.toggle-icon');
+            
+            if (!targetCollapse || !icon) return;
+            
+            // Initialize collapse with toggle false to prevent auto-show
+            const bsCollapse = new bootstrap.Collapse(targetCollapse, {
+                toggle: false
+            });
+            
+            // Toggle the collapse when header is clicked
+            header.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Close all other open collapses
+                collapses.forEach(collapse => {
+                    if (collapse !== targetCollapse && collapse.classList.contains('show')) {
+                        const otherBsCollapse = bootstrap.Collapse.getInstance(collapse);
+                        if (otherBsCollapse) {
+                            otherBsCollapse.hide();
+                        }
+                    }
+                });
+                
+                // Toggle the clicked collapse
+                bsCollapse.toggle();
+                
+                // Update icon
+                if (targetCollapse.classList.contains('show')) {
+                    icon.classList.remove('bi-chevron-right');
+                    icon.classList.add('bi-chevron-down');
+                } else {
+                    icon.classList.remove('bi-chevron-down');
+                    icon.classList.add('bi-chevron-right');
                 }
+            });
+            
+            // Update icon when collapse is shown/hidden by other means
+            targetCollapse.addEventListener('show.bs.collapse', function() {
+                icon.classList.remove('bi-chevron-right');
+                icon.classList.add('bi-chevron-down');
+            });
+            
+            targetCollapse.addEventListener('hide.bs.collapse', function() {
+                icon.classList.remove('bi-chevron-down');
+                icon.classList.add('bi-chevron-right');
             });
         });
     });

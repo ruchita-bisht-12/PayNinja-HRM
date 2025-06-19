@@ -879,32 +879,54 @@ public function checkOut(Employee $employee, $location = null, $userLat = null, 
     }
 
     /**
-     * Check if a date is a weekend based on company settings
+     * Check if a date is a weekend based on company settings.
      *
      * @param \Carbon\Carbon|string $date
      * @return bool
      */
-    public function isWeekend($date)
+    public function isWeekend($date): bool
     {
         if (is_string($date)) {
-            $date = Carbon::parse($date);
+            $date = \Carbon\Carbon::parse($date);
         }
-        
-        // Get company settings (you may need to adjust this based on your settings structure)
+
         $settings = $this->getAttendanceSettings();
-        
-        // Default to Saturday and Sunday if no settings found
-        $weekendDays = $settings->weekend_days ?? [0, 6]; // 0 = Sunday, 6 = Saturday
-        
-        if (is_string($weekendDays)) {
-            $weekendDays = explode(',', $weekendDays);
-            $weekendDays = array_map('trim', $weekendDays);
+
+        // Default to Sunday being a weekend if no settings are found or weekend_days is empty
+        if (!$settings || empty($settings->weekend_days)) {
+            return $date->isSunday();
         }
-        
-        // Convert day of week to match Carbon's format (0-6, where 0 is Sunday)
-        $dayOfWeek = $date->dayOfWeek; // 0 (Sunday) to 6 (Saturday)
-        
-        return in_array($dayOfWeek, $weekendDays);
+        \Log::debug('check the days :', ['weekend_days' => $settings->weekend_days]);
+        $weekendDays = $settings->weekend_days; // This is an array from the model cast
+        $dayName = $date->format('l'); // Full day name, e.g., "Sunday"
+
+        // Check for regular full-day weekends (e.g., Sunday, or if "Saturday" is selected for all Saturdays)
+        if (in_array($dayName, $weekendDays)) {
+            return true;
+        }
+
+        // Handle alternate Saturdays if the day is a Saturday
+        if ($date->isSaturday()) {
+            // This calculates which occurrence of the day it is in the month (e.g., 1st, 2nd, 3rd Saturday)
+            $saturdayOfMonth = (int)ceil($date->day / 7);
+
+            // 1st and 3rd Saturday off
+            if (in_array('saturday_1_3', $weekendDays) && in_array($saturdayOfMonth, [1, 3])) {
+                return true;
+            }
+            
+            // 2nd and 4th Saturday off
+            if (in_array('saturday_2_4', $weekendDays) && in_array($saturdayOfMonth, [2, 4])) {
+                return true;
+            }
+
+            // 1st, 3rd, and 5th Saturday off
+            if (in_array('saturday_1_3_5', $weekendDays) && in_array($saturdayOfMonth, [1, 3, 5])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

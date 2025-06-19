@@ -37,7 +37,7 @@
 @endpush
 
 @section('content')
-    <div class="main-content">
+    <div class="main-content-01">
         <section class="section">
             <div class="section-header">
                 <h1>Dashboard</h1>
@@ -51,7 +51,7 @@
             <div class="row">
                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                     <div class="card card-statistic-1 card-hover">
-                        <div class="card-icon bg-primary text-white">
+                        <div class="card-icon text-white">
                             <i class="fas fa-building"></i>
                         </div>
                         <div class="card-wrap">
@@ -66,7 +66,7 @@
                 </div>
                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                     <div class="card card-statistic-1 card-hover">
-                        <div class="card-icon bg-danger text-white">
+                        <div class="card-icon text-white">
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="card-wrap">
@@ -81,7 +81,7 @@
                 </div>
                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                     <div class="card card-statistic-1 card-hover">
-                        <div class="card-icon bg-warning text-white">
+                        <div class="card-icon text-white">
                             <i class="fas fa-sitemap"></i>
                         </div>
                         <div class="card-wrap">
@@ -96,7 +96,7 @@
                 </div>
                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                     <div class="card card-statistic-1 card-hover">
-                        <div class="card-icon bg-success text-white">
+                        <div class="card-icon text-white">
                             <i class="fas fa-user-shield"></i>
                         </div>
                         <div class="card-wrap">
@@ -114,7 +114,7 @@
             <div class="row">
                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                     <div class="card card-statistic-1 card-hover">
-                        <div class="card-icon bg-info text-white">
+                        <div class="card-icon text-white">
                             <i class="fas fa-user-cog"></i>
                         </div>
                         <div class="card-wrap">
@@ -129,7 +129,7 @@
                 </div>
                 <div class="col-lg-3 col-md-6 col-sm-6 col-12">
                     <div class="card card-statistic-1 card-hover">
-                        <div class="card-icon bg-secondary text-white">
+                        <div class="card-icon text-white">
                             <i class="fas fa-user"></i>
                         </div>
                         <div class="card-wrap">
@@ -161,7 +161,7 @@
                         <div class="card-header">
                             <h4>Companies and Admins</h4>
                         </div>
-                        <div class="card-body">
+                        <div class="card-body card-body-box">
                             @if ($companiesWithAdmins && $companiesWithAdmins->count() > 0)
                                 <div class="table-responsive">
                                     <table class="table table-striped">

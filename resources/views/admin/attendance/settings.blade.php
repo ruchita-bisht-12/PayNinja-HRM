@@ -49,13 +49,19 @@
                                         <div class="form-group">
                                             <label for="office_start_time" class="form-label">Office Start Time</label>
                                             @php
-                                                // Get the saved value from database
-                                                $officeStart = old('office_start_time', $settings->office_start_time ?? '09:00:00');
-                                                // Convert to H:i format if value exists
-                                                if ($officeStart && strpos($officeStart, ':') !== false) {
-                                                    $officeStart = \Carbon\Carbon::createFromFormat('H:i:s', $officeStart)->format('H:i');
-                                                }
-                                            @endphp
+    $officeStart = old('office_start_time', $settings->office_start_time ?? '09:00:00');
+    try {
+        if (preg_match('/^\d{2}:\d{2}:\d{2}$/', $officeStart)) {
+            $officeStart = \Carbon\Carbon::createFromFormat('H:i:s', $officeStart)->format('H:i');
+        } elseif (preg_match('/^\d{2}:\d{2}$/', $officeStart)) {
+            // already in correct format
+        } else {
+            $officeStart = '09:00';
+        }
+    } catch (\Exception $e) {
+        $officeStart = '09:00';
+    }
+@endphp
                                             <input type="time" class="form-control" id="office_start_time" 
                                                    name="office_start_time" step="300"
                                                    value="{{ $officeStart }}" required>
@@ -65,13 +71,19 @@
                                         <div class="form-group">
                                             <label for="office_end_time" class="form-label">Office End Time</label>
                                             @php
-                                                // Get the saved value from database
-                                                $officeEnd = old('office_end_time', $settings->office_end_time ?? null);
-                                                // Convert to H:i format if value exists
-                                                if ($officeEnd && strpos($officeEnd, ':') !== false) {
-                                                    $officeEnd = \Carbon\Carbon::createFromFormat('H:i:s', $officeEnd)->format('H:i');
-                                                }
-                                            @endphp
+    $officeEnd = old('office_end_time', $settings->office_end_time ?? '18:00:00');
+    try {
+        if (preg_match('/^\d{2}:\d{2}:\d{2}$/', $officeEnd)) {
+            $officeEnd = \Carbon\Carbon::createFromFormat('H:i:s', $officeEnd)->format('H:i');
+        } elseif (preg_match('/^\d{2}:\d{2}$/', $officeEnd)) {
+            // already in correct format
+        } else {
+            $officeEnd = '18:00';
+        }
+    } catch (\Exception $e) {
+        $officeEnd = '18:00';
+    }
+@endphp
                                             <input type="time" class="form-control" id="office_end_time" 
                                                    name="office_end_time" step="300"
                                                    value="{{ $officeEnd }}" required>
@@ -95,11 +107,12 @@
                                         <div class="form-group">
                                             <label for="grace_period" class="form-label fw-medium">Grace Period</label>
                                             @php
-                                                $gracePeriod = old('grace_period', $settings->grace_period ?? '00:15:00');
+                                                $gracePeriod = old('grace_period', $settings->grace_period ?? '00:15');
                                                 try {
-                                                    if ($gracePeriod) {
-                                                        // Handle both 'H:i' and 'H:i:s' formats
+                                                    if (preg_match('/^\d{2}:\d{2}:\d{2}$/', $gracePeriod)) {
                                                         $gracePeriod = \Carbon\Carbon::createFromFormat('H:i:s', $gracePeriod)->format('H:i');
+                                                    } elseif (preg_match('/^\d{2}:\d{2}$/', $gracePeriod)) {
+                                                        // already in correct format
                                                     } else {
                                                         $gracePeriod = '00:15';
                                                     }
@@ -119,13 +132,19 @@
                                         <div class="form-group">
                                             <label for="auto_absent_time" class="form-label">Auto Absent Time</label>
                                             @php
-                                                // Get the saved value from database
-                                                $autoAbsentTime = old('auto_absent_time', $settings->auto_absent_time ?? '18:00');
-                                                // Convert to H:i format if value exists
-                                                if ($autoAbsentTime && strpos($autoAbsentTime, ':') !== false) {
-                                                    $autoAbsentTime = \Carbon\Carbon::createFromFormat('H:i:s', $autoAbsentTime)->format('H:i');
-                                                }
-                                            @endphp
+    $autoAbsentTime = old('auto_absent_time', $settings->auto_absent_time ?? '18:00');
+    try {
+        if (preg_match('/^\d{2}:\d{2}:\d{2}$/', $autoAbsentTime)) {
+            $autoAbsentTime = \Carbon\Carbon::createFromFormat('H:i:s', $autoAbsentTime)->format('H:i');
+        } elseif (preg_match('/^\d{2}:\d{2}$/', $autoAbsentTime)) {
+            // already in correct format
+        } else {
+            $autoAbsentTime = '18:00';
+        }
+    } catch (\Exception $e) {
+        $autoAbsentTime = '18:00';
+    }
+@endphp
                                             <input type="time" class="form-control" id="auto_absent_time" 
                                                    name="auto_absent_time" step="300"
                                                    value="{{ $autoAbsentTime }}" required>
@@ -255,13 +274,16 @@
                                 <div class="row">
                                     @php
                                         $weekendDays = [];
-                                        if (isset($settings) && !empty($settings->weekend_days)) {
-                                            if (is_string($settings->weekend_days)) {
-                                                $weekendDays = json_decode($settings->weekend_days, true) ?: [];
-                                            } elseif (is_array($settings->weekend_days)) {
-                                                $weekendDays = $settings->weekend_days;
+                                        if (isset($settings)) {
+                                            $rawWeekendDays = $settings->weekend_days ?? '';
+                                            if (is_string($rawWeekendDays)) {
+                                                $decoded = json_decode($rawWeekendDays, true);
+                                                $weekendDays = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : [];
+                                            } elseif (is_array($rawWeekendDays)) {
+                                                $weekendDays = $rawWeekendDays;
                                             }
-                                        } else {
+                                        }
+                                        if (empty($weekendDays)) {
                                             $weekendDays = old('weekend_days', ['Saturday', 'Sunday']);
                                         }
                                         $weekendDays = is_array($weekendDays) ? $weekendDays : [];
@@ -280,6 +302,28 @@
                                                 </label>
                                             </div>
                                         </div>
+                                        @if ($day === 'Saturday')
+                                            <div class="col-md-9 col-12 mb-2 offset-md-3">
+                                                <div class="form-check ms-3">
+                                                    <input class="form-check-input weekend-alt-saturday" type="checkbox" name="weekend_days[]" value="saturday_1_3" id="weekend_saturday_1_3" {{ in_array('saturday_1_3', $weekendDays) ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="weekend_saturday_1_3">
+                                                        1st & 3rd Saturday
+                                                    </label>
+                                                </div>
+                                                <div class="form-check ms-3">
+                                                    <input class="form-check-input weekend-alt-saturday" type="checkbox" name="weekend_days[]" value="saturday_2_4" id="weekend_saturday_2_4" {{ in_array('saturday_2_4', $weekendDays) ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="weekend_saturday_2_4">
+                                                        2nd & 4th Saturday
+                                                    </label>
+                                                </div>
+                                                <div class="form-check ms-3">
+                                                    <input class="form-check-input weekend-alt-saturday" type="checkbox" name="weekend_days[]" value="saturday_1_3_5" id="weekend_saturday_1_3_5" {{ in_array('saturday_1_3_5', $weekendDays) ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="weekend_saturday_1_3_5">
+                                                        1st, 3rd & 5th Saturday
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        @endif
                                     @endforeach
                                 </div>
                             </div>
@@ -556,5 +600,38 @@
         }
     });
 </script>
-
+<script>
+    // Mutually exclusive selection for Saturday and alternate Saturdays
+    document.addEventListener('DOMContentLoaded', function () {
+        const regularSat = document.getElementById('weekend_saturday');
+        const altSats = [
+            document.getElementById('weekend_saturday_1_3'),
+            document.getElementById('weekend_saturday_2_4'),
+            document.getElementById('weekend_saturday_1_3_5')
+        ];
+        function toggleAltSaturdays() {
+            if (regularSat && regularSat.checked) {
+                altSats.forEach(cb => {
+                    if(cb) { cb.checked = false; cb.disabled = true; }
+                });
+            } else {
+                altSats.forEach(cb => { if(cb) cb.disabled = false; });
+            }
+        }
+        function toggleRegularSaturday() {
+            if (altSats.some(cb => cb && cb.checked)) {
+                if(regularSat) { regularSat.checked = false; regularSat.disabled = true; }
+            } else {
+                if(regularSat) regularSat.disabled = false;
+            }
+        }
+        if (regularSat) {
+            regularSat.addEventListener('change', toggleAltSaturdays);
+            altSats.forEach(cb => { if(cb) cb.addEventListener('change', toggleRegularSaturday); });
+            // Initial state
+            toggleAltSaturdays();
+            toggleRegularSaturday();
+        }
+    });
+</script>
 @endpush

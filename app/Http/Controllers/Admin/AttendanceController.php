@@ -37,13 +37,34 @@ class AttendanceController extends Controller
 
         // Apply filters
         if ($request->filled('date_range')) {
-            $dates = explode(' - ', $request->date_range);
-            $startDate = Carbon::parse($dates[0])->startOfDay();
-            $endDate = isset($dates[1]) 
-                ? Carbon::parse($dates[1])->endOfDay() 
-                : $startDate->copy()->endOfDay();
-            
-            $query->whereBetween('date', [$startDate, $endDate]);
+            try {
+                $dates = array_map('trim', explode(' - ', $request->date_range));
+                
+                // If only one date is provided, use it for both start and end
+                if (count($dates) === 1 && !empty($dates[0])) {
+                    $startDate = Carbon::parse($dates[0])->startOfDay();
+                    $endDate = $startDate->copy()->endOfDay();
+                } 
+                // If two dates are provided
+                elseif (count($dates) === 2) {
+                    $startDate = Carbon::parse($dates[0])->startOfDay();
+                    $endDate = Carbon::parse($dates[1])->endOfDay();
+                    
+                    // Validate date range is not too large (max 1 year)
+                    if ($endDate->diffInDays($startDate) > 365) {
+                        return redirect()->route('admin.attendance.index')
+                            ->with('error', 'Date range cannot be more than 1 year.');
+                    }
+                } else {
+                    throw new \Exception('Invalid date range format');
+                }
+                
+                $query->whereBetween('date', [$startDate, $endDate]);
+                
+            } catch (\Exception $e) {
+                return redirect()->route('admin.attendance.index')
+                    ->with('error', 'Invalid date format. Please use YYYY-MM-DD format or select a date from the calendar.');
+            }
         }
 
         if ($request->filled('employee_id')) {
