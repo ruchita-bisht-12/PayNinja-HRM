@@ -3,7 +3,7 @@
 @section('title', 'Company Details')
 
 @section('content')
-<div class="main-content">
+<div class="main-content main-contant-01">
     <section class="section">
         <div class="section-header">
             <h1>Company Details: {{ $company->name }}</h1>

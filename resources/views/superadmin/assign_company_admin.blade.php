@@ -3,7 +3,7 @@
 @section('title', isset($admin) ? 'Edit Company Admin' : 'Assign Company Admin')
 
 @section('content')
-<div class="main-content">
+<div class="main-content-01">
     <section class="section">
         <div class="section-header">
             <h1>{{ isset($admin) ? 'Edit Company Admin' : 'Assign Company Admin' }}</h1>

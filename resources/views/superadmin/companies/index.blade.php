@@ -3,7 +3,7 @@
 @section('title', 'Manage Companies and Users')
 
 @section('content')
-<div class="main-content">
+<div class="main-content-01">
     <section class="section">
         <div class="section-header">
             <h1>Manage Companies and Users</h1>
@@ -22,10 +22,10 @@
             @endif
 
             <div class="card">
-                <div class="card-header">
+                <div class="card-header card-margin">
                     <h4>All Companies</h4>
                     <div class="card-header-action">
-                        <a href="{{ route('superadmin.companies.create') }}" class="btn btn-primary">Add New Company</a>
+                        <a href="{{ route('superadmin.companies.create') }}" class="btn button">Add New Company</a>
                     </div>
                 </div>
                 <div class="card-body">

@@ -4,6 +4,14 @@
 
 @section('content')
 <div class="container-fluid">
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
@@ -124,7 +132,7 @@
                                         <td>{{ \Carbon\Carbon::parse($attendance->date)->format('d M Y') }}</td>
                                         <td>
                                             @if($attendance->check_in)
-                                                {{ \Carbon\Carbon::parse($attendance->check_in)->format('h:i A') }}
+                                                {{ \Carbon\Carbon::parse($attendance->check_in)->format('h:i:s A') }}
                                                 @if($attendance->check_in_location)
                                                     <i class="bi bi-geo-alt-fill text-primary ms-1" 
                                                        data-bs-toggle="tooltip" 
@@ -136,7 +144,7 @@
                                         </td>
                                         <td>
                                             @if($attendance->check_out)
-                                                {{ \Carbon\Carbon::parse($attendance->check_out)->format('h:i A') }}
+                                                {{ \Carbon\Carbon::parse($attendance->check_out)->format('h:i:s A') }}
                                                 @if($attendance->check_out_location)
                                                     <i class="bi bi-geo-alt-fill text-primary ms-1" 
                                                        data-bs-toggle="tooltip" 
@@ -203,16 +211,27 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="text-center">No attendance records found.</td>
+                                        <td colspan="9" class="text-center">
+                                            <div class="alert alert-warning mb-0" role="alert">
+                                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                                No attendance records found for the selected criteria.
+                                                @if(request()->hasAny(['date_range', 'employee_id', 'department_id', 'status']))
+                                                    <a href="{{ route('admin.attendance.index') }}" class="alert-link ms-2">Clear filters</a>
+                                                @endif
+                                            </div>
+                                        </td>
                                     </tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
 
-                    <div class="mt-3">
+                    <div class="mt-4 d-flex justify-content-between align-items-center">
                         <div class="text-muted">
-                            Total: {{ $attendances->count() }} records
+                            Showing {{ $attendances->firstItem() }} to {{ $attendances->lastItem() }} of {{ $attendances->total() }} entries
+                        </div>
+                        <div>
+                            {{ $attendances->withQueryString()->links() }}
                         </div>
                     </div>
                 </div>
@@ -396,7 +415,7 @@
                                 <li>Use the template to ensure correct formatting</li>
                                 <li>Required fields: <code>employee_id</code>, <code>date</code>, <code>status</code></li>
                                 <li>Date format: YYYY-MM-DD</li>
-                                <li>Time format: HH:MM (24-hour format)</li>
+                                <li>Time format: HH:MM:SS (24-hour format)</li>
                                 <li>Valid status values: Present, Absent, Late, On Leave, Half Day</li>
                             </ol>
                         </div>
@@ -451,7 +470,17 @@
 
 @push('styles')
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 <style>
+    .daterangepicker {
+        z-index: 1060 !important;
+    }
+    .alert-warning {
+        background-color: #fff3cd;
+        border-color: #ffeeba;
+        color: #856404;
+    }
     .table th { white-space: nowrap; }
     .avatar {
         width: 32px;
@@ -495,6 +524,60 @@
 
 <script>
 $(document).ready(function() {
+    // Initialize date range picker with validation
+    $('.daterange').daterangepicker({
+        autoUpdateInput: false,
+        locale: {
+            format: 'YYYY-MM-DD',
+            cancelLabel: 'Clear'
+        },
+        ranges: {
+           'Today': [moment(), moment()],
+           'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+           'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+           'This Month': [moment().startOf('month'), moment().endOf('month')],
+           'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+        }
+    });
+
+    // Set the initial value if it exists
+    $('.daterange').on('apply.daterangepicker', function(ev, picker) {
+        $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
+    });
+
+    $('.daterange').on('cancel.daterangepicker', function(ev, picker) {
+        $(this).val('');
+    });
+
+    // Validate date range on form submit
+    $('#filterForm').on('submit', function(e) {
+        const dateRange = $('#date_range').val();
+        if (dateRange) {
+            const dates = dateRange.split(' - ');
+            if (dates.length !== 2 || !moment(dates[0], 'YYYY-MM-DD', true).isValid() || !moment(dates[1], 'YYYY-MM-DD', true).isValid()) {
+                e.preventDefault();
+                showToast('Error', 'Please select a valid date range in the format YYYY-MM-DD', 'error');
+                return false;
+            }
+            
+            const startDate = moment(dates[0]);
+            const endDate = moment(dates[1]);
+            const diffDays = endDate.diff(startDate, 'days');
+            
+            if (diffDays < 0) {
+                e.preventDefault();
+                showToast('Error', 'End date cannot be before start date', 'error');
+                return false;
+            }
+            
+            if (diffDays > 365) {
+                e.preventDefault();
+                showToast('Error', 'Date range cannot be more than 1 year', 'error');
+                return false;
+            }
+        }
+    });
+
     // Handle export button clicks
     $('.export-btn').on('click', function(e) {
         e.preventDefault();
