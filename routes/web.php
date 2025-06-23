@@ -22,9 +22,24 @@ use App\Http\Controllers\Employee\PayrollController as EmployeePayrollController
 use App\Http\Controllers\Admin\AttendanceAdjustmentController;
 use App\Http\Controllers\Admin\BeneficiaryBadgeController;
 use App\Http\Controllers\Admin\EmployeePayrollConfigController;
-
+use Illuminate\Support\Facades\Artisan;
 // Test logging route - can be removed after testing
 require __DIR__ . '/test-logging.php';
+
+
+// Route::get('/migrate-fresh-seed', function () {
+//     Artisan::call('migrate:fresh', [
+//         '--seed' => true,
+//         '--force' => true,
+//     ]);
+
+//     return '✅ Fresh migration with seeding done!';
+// });
+Route::get('/migrate', function () {
+    Artisan::call('migrate');
+
+    return '✅ Migration done!';
+});
 
 Route::get('/', function () {
     return view('welcome');
