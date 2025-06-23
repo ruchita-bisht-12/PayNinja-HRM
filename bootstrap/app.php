@@ -10,6 +10,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         Commands\MarkAbsentEmployees::class,
         Commands\MarkLeavesCommand::class,
+        Commands\MarkWeekendAsWeekoff::class,
     ])
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -35,8 +36,14 @@ return Application::configure(basePath: dirname(__DIR__))
             ->appendOutputTo(storage_path('logs/schedule.log'));
 
         $schedule->command('attendance:mark-absent')
-            // ->dailyAt('19:00')
-            ->everyMinute()
+            ->dailyAt('00:05')  // Run at 12:05 AM
+            ->timezone('Asia/Kolkata')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/schedule.log'));
+            
+        // Mark weekends as weekoff - run daily at 12:10 AM
+        $schedule->command('attendance:mark-weekend --date=tomorrow')
+            ->dailyAt('00:10')
             ->timezone('Asia/Kolkata')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/schedule.log'));

@@ -159,7 +159,8 @@
                                                 $attendance->status === 'Present' ? 'success' : 
                                                 ($attendance->status === 'Absent' ? 'danger' : 
                                                 ($attendance->status === 'Late' ? 'warning' : 
-                                                ($attendance->status === 'On Leave' ? 'info' : 'secondary'))) 
+                                                ($attendance->status === 'On Leave' ? 'info' : 
+                                                ($attendance->status === 'Holiday' ? 'primary' : 'secondary')))) 
                                             }}">
                                                 {{ $attendance->status }}
                                             </span>

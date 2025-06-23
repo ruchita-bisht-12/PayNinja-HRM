@@ -180,6 +180,14 @@
                             </div>
                         </div>
                     </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <h6 class="card-title">Holiday</h6>
+                                <h2>{{ $monthlySummary['holiday'] ?? 0 }}</h2>
+                            </div>
+                        </div>
+                    </div>
                     <div class="col-md-6 mb-3">
                         <div class="card">
                             <div class="card-body">

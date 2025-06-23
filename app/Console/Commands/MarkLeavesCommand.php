@@ -68,6 +68,22 @@ class MarkLeavesCommand extends Command
         
         foreach ($leaveRequests as $leaveRequest) {
             $this->info("Processing leave request ID: " . $leaveRequest->id . " for employee ID: " . $leaveRequest->employee_id);
+            
+            // Get working days from the leave request
+            $workingDays = is_array($leaveRequest->working_days) ? $leaveRequest->working_days : [];
+
+            // Skip if no working days are specified
+            if (empty($workingDays)) {
+                $this->warn("No working days specified for leave request ID: " . $leaveRequest->id . ". Skipping...");
+                continue;
+            }
+            
+            // Skip if the current date is not in the working days
+            if (!in_array($dateString, $workingDays)) {
+                $this->info("Skipping date " . $dateString . " as it's not a working day in the leave request");
+                continue;
+            }
+            
             try {
                 $employee = $leaveRequest->employee;
                 
@@ -91,8 +107,8 @@ class MarkLeavesCommand extends Command
                 $this->info("Existing attendance: " . ($existingAttendance ? 'Found' : 'Not found'));
                     
                 if ($existingAttendance) {
-                    // Update existing attendance to On Leave if it's not already marked as such
-                    if ($existingAttendance->status !== 'On Leave') {
+                    // Only update existing attendance to On Leave if it's not already Holiday or Week-Off
+                    if (!in_array($existingAttendance->status, ['Holiday', 'Week-Off', 'On Leave'])) {
                         $existingAttendance->update([
                             'status' => 'On Leave',
                             'check_in_status' => 'On Leave',
@@ -100,9 +116,12 @@ class MarkLeavesCommand extends Command
                             'remarks' => 'On approved leave: ' . ($leaveRequest->leaveType->name ?? 'Leave'),
                         ]);
                         $count++;
+                        $this->info("Successfully updated employee ID " . $employee->id . " to On Leave for " . $dateString);
+                    } else {
+                        $this->info("Skipping employee ID " . $employee->id . ". Already marked as " . $existingAttendance->status . ".");
                     }
                 } else {
-                    // Create new attendance record
+                    // Create new attendance record only if it's not a weekend or holiday
                     $settings = $this->attendanceService->getAttendanceSettings($employee->company_id);
                     
                     if (!$settings) {
@@ -110,22 +129,33 @@ class MarkLeavesCommand extends Command
                         Log::error('Attendance settings not found for company', ['company_id' => $employee->company_id]);
                         continue;
                     }
-                    
-                    $employee->attendances()->create([
-                        'date' => $dateString,
-                        'status' => 'On Leave',
-                        'check_in_status' => 'On Leave',
-                        'leave_request_id' => $leaveRequest->id,
-                        'remarks' => 'On approved leave: ' . ($leaveRequest->leaveType->name ?? 'Leave'),
-                        'office_start_time' => $settings->office_start_time ?? '09:00:00',
-                        'office_end_time' => $settings->office_end_time ?? '18:00:00',
-                        'grace_period' => $settings->grace_period ?? '00:15:00',
-                    ]);
-                    
-                    $count++;
+
+                    // Before creating, check if it's already marked as Holiday or Week-Off
+                    // This might happen if MarkHolidayAttendance or MarkWeekendAsWeekoff ran earlier and created a record
+                    $preExistingAttendance = $employee->attendances()
+                        ->whereDate('date', $dateString)
+                        ->first();
+
+                    if ($preExistingAttendance && in_array($preExistingAttendance->status, ['Holiday', 'Week-Off'])) {
+                        $this->info("Skipping creation for employee ID " . $employee->id . ". Pre-existing attendance is " . $preExistingAttendance->status . ".");
+                    } else {
+                        $employee->attendances()->create([
+                            'date' => $dateString,
+                            'status' => 'On Leave',
+                            'check_in_status' => 'On Leave',
+                            'leave_request_id' => $leaveRequest->id,
+                            'remarks' => 'On approved leave: ' . ($leaveRequest->leaveType->name ?? 'Leave'),
+                            'office_start_time' => $settings->office_start_time ?? '09:00:00',
+                            'office_end_time' => $settings->office_end_time ?? '18:00:00',
+                            'grace_period' => $settings->grace_period ?? '00:15:00',
+                        ]);
+                        
+                        $count++;
+                        $this->info("Successfully created On Leave record for employee ID " . $employee->id . " for " . $dateString);
+                    }
                 }
                 
-                $this->info("Successfully marked employee ID " . $employee->id . " as On Leave for " . $dateString);
+                // Removed redundant info log, already logged inside if/else blocks
                 Log::info('Marked employee as On Leave', [
                     'employee_id' => $employee->id,
                     'date' => $dateString,
