@@ -32,7 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule) {
         // Master attendance scheduler - runs all attendance commands in order
         $schedule->command('attendance:run-all')
-            // ->dailyAt('01:00')  // Run daily at 1:00 AM
+            ->dailyAt('19:00')  // Run daily at 1:00 AM
             ->everyMinute()
             ->timezone('Asia/Kolkata')
             ->withoutOverlapping()
