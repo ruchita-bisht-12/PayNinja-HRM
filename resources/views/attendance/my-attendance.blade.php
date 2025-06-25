@@ -130,11 +130,19 @@
             </div>
             <div class="card-body">
                 <div class="row text-center">
-                    <div class="col-md-3 mb-3">
+                    <!-- <div class="col-md-3 mb-3">
                         <div class="card bg-primary text-white">
                             <div class="card-body">
                                 <h6 class="card-title">Working Days</h6>
                                 <h2>{{ $monthlySummary['total_working_days'] ?? 0 }}</h2>
+                            </div>
+                        </div>
+                    </div> -->
+                    <div class="col-md-3 mb-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h6 class="card-title">Week-Off</h6>
+                                <h2>{{ $monthlySummary['week_off'] ?? 0 }}</h2>
                             </div>
                         </div>
                     </div>
