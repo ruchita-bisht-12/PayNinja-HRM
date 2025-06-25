@@ -33,78 +33,96 @@ class MarkHolidayAttendance extends Command
      */
     public function handle()
     {
-        $date = $this->option('date') ? Carbon::parse($this->option('date')) : now();
-        $dateString = $date->toDateString();
-        
-        $this->info("Checking for holidays on: " . $dateString);
-        
-        // Get all companies that have academic holidays on this date
-        $holidays = AcademicHoliday::whereDate('from_date', '<=', $dateString)
-            ->whereDate('to_date', '>=', $dateString)
-            ->with('company')
-            ->get();
+        try {
+            $date = $this->option('date') ? Carbon::parse($this->option('date')) : now();
+            $dateString = $date->toDateString();
             
-        if ($holidays->isEmpty()) {
-            $this->info("No academic holidays found for " . $dateString);
-            return 0;
-        }
+            $logMessage = "Checking for holidays on: " . $dateString;
+            $this->info($logMessage);
+            Log::info($logMessage);
+            
+            // Get all companies that have academic holidays on this date
+            $holidays = AcademicHoliday::whereDate('from_date', '<=', $dateString)
+                ->whereDate('to_date', '>=', $dateString)
+                ->with('company')
+                ->get();
+                
+            if ($holidays->isEmpty()) {
+                $logMessage = "No academic holidays found for " . $dateString;
+                $this->info($logMessage);
+                Log::info($logMessage);
+                return 0;
+            }
         
         $this->info("Found " . $holidays->count() . " academic holiday(s) on this date");
         
         $totalMarked = 0;
         
         foreach ($holidays as $holiday) {
-            $this->line("Processing: " . $holiday->name . " for company: " . $holiday->company->name);
+            $company = $holiday->company;
+            $logMessage = "Processing holiday '{$holiday->name}' for company: " . $company->name;
+            $this->info($logMessage);
+            Log::info($logMessage);
             
-            // Get all active employees for this company with their names
-            $employees = Employee::where('company_id', $holiday->company_id)
-                // ->where('status', 'active')
-                ->with('user:id,name') // Eager load user relationship to get names
-                ->get(['id', 'user_id']);
+            // Get all active employees for this company
+            $employees = Employee::where('company_id', $company->id)
+                ->where('status', 'active')
+                ->get();
                 
-            $this->info("Found " . $employees->count() . " active employees");
+            $logMessage = "Marking " . $employees->count() . " employees as Holiday";
+            $this->info($logMessage);
+            Log::info($logMessage);
             
-            // Display list of employees being processed
-            $this->line("Employees being marked for holiday:");
-            $this->table(
-                ['ID', 'Name'],
-                $employees->map(function($employee) {
-                    return [
-                        'id' => $employee->id,
-                        'name' => $employee->user->name ?? 'N/A'
-                    ];
-                })->toArray()
-            );
-            
-            // Prepare data for bulk insert/update
-            $attendanceData = [];
-            $now = now();
+            $markedCount = 0;
+            $updatedCount = 0;
             
             foreach ($employees as $employee) {
-                $attendanceData[] = [
-                    'employee_id' => $employee->id,
-                    'date' => $dateString,
-                    'status' => 'Holiday',
-                    'remarks' => 'Academic Holiday: ' . $holiday->name,
-                    'created_at' => $now,
-                    'updated_at' => $now
-                ];
+                // Check if attendance already exists for this date and employee
+                $existingAttendance = Attendance::where('employee_id', $employee->id)
+                    ->whereDate('date', $dateString)
+                    ->first();
+                    
+                if (!$existingAttendance) {
+                    // Create new attendance record
+                    Attendance::create([
+                        'employee_id' => $employee->id,
+                        'date' => $dateString,
+                        'status' => 'Holiday',
+                        'remarks' => 'Academic Holiday: ' . $holiday->name,
+                        'created_by' => 1, // System user
+                        'updated_by' => 1, // System user
+                    ]);
+                    $markedCount++;
+                } else if ($existingAttendance->status !== 'Holiday') {
+                    // Update existing attendance if it's not already marked as Holiday
+                    $existingAttendance->update([
+                        'status' => 'Holiday',
+                        'remarks' => 'Updated to Holiday - Academic Holiday: ' . $holiday->name,
+                        'updated_by' => 1, // System user
+                    ]);
+                    $updatedCount++;
+                }
             }
             
-            if (!empty($attendanceData)) {
-                // Use upsert to handle duplicates
-                Attendance::upsert(
-                    $attendanceData,
-                    ['employee_id', 'date'],
-                    ['status', 'remarks', 'updated_at']
-                );
-                
-                $totalMarked += count($attendanceData);
-                $this->info("✓ Marked " . count($attendanceData) . " employees for " . $holiday->name);
-            }
+            $logMessage = "Holiday attendance completed for {$company->name}: {$markedCount} marked, {$updatedCount} updated";
+            $this->info($logMessage);
+            Log::info($logMessage);
         }
         
-        $this->info("\nTotal attendance records marked as Holiday: " . $totalMarked);
+        $logMessage = "Holiday attendance marking completed for " . $dateString;
+        $this->info($logMessage);
+        Log::info($logMessage);
+        
         return 0;
+            
+        } catch (\Exception $e) {
+            $errorMessage = 'Error in MarkHolidayAttendance: ' . $e->getMessage();
+            $this->error($errorMessage);
+            Log::error($errorMessage, [
+                'exception' => $e,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return 1;
+        }
     }
 }

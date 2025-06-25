@@ -54,15 +54,20 @@ class MarkWeekendAsWeekoff extends Command
      */
     public function handle()
     {
-        $date = $this->argument('date') 
-            ? Carbon::parse($this->argument('date')) 
-            : now();
-
-        $dateString = $date->toDateString();
-        // dd($dateString);
-        $this->info("Marking weekend attendance for date: {$dateString}");
-        
         try {
+            $date = $this->argument('date') ? Carbon::parse($this->argument('date')) : now();
+            $dateString = $date->toDateString();
+            
+            $logMessage = "Marking weekend attendance for date: {$dateString}";
+            $this->info($logMessage);
+            Log::info($logMessage);
+            
+            // Log the current day for debugging
+            $dayOfWeek = strtolower($date->format('l'));
+            $logMessage = "Day of week: {$dayOfWeek}";
+            $this->info($logMessage);
+            Log::info($logMessage);
+            
             // Get all companies that have employees
             $companyIds = \App\Models\Employee::select('company_id')
                 ->distinct()
@@ -72,65 +77,109 @@ class MarkWeekendAsWeekoff extends Command
                 ->toArray();
 
             if (empty($companyIds)) {
-                $this->warn('No companies with employees found.');
+                $logMessage = 'No companies with employees found.';
+                $this->warn($logMessage);
+                Log::info($logMessage);
                 return 0;
             }
             
             $markedCount = 0;
+            $logMessage = 'Found ' . count($companyIds) . ' companies with employees';
+            $this->info($logMessage);
+            Log::info($logMessage);
             
             foreach ($companyIds as $companyId) {
-                // Set the company ID for the attendance service
-                $this->attendanceService->setCompanyId($companyId);
-                
-                // Get the settings for logging purposes
-                $settings = $this->attendanceService->getAttendanceSettings($companyId);
-                $weekendDays = $settings ? ($settings->weekend_days ?? []) : [];
-                
-                $this->info("Processing company ID {$companyId} with weekend configuration: " . json_encode($weekendDays));
-                
-                // Check if the date is a weekend for this company
-                if ($this->attendanceService->isWeekend($date)) {
-                    $this->info("Date {$dateString} is a weekend for company ID: {$companyId}");
+                try {
+                    // Set the company ID for the attendance service
+                    $this->attendanceService->setCompanyId($companyId);
                     
-                    // Mark employees for this company
-                    $marked = $this->markEmployeesForCompany($companyId, $date);
-                    $markedCount += $marked;
-                    $this->info("Marked {$marked} employees as weekend-off for company ID: {$companyId}");
-                } else {
-                    $this->info("Date {$dateString} is not a weekend for company ID: {$companyId}");
+                    // Get the settings for logging purposes
+                    $settings = $this->attendanceService->getAttendanceSettings($companyId);
+                    $weekendDays = $settings ? ($settings->weekend_days ?? []) : [];
                     
-                    // Log why it's not a weekend
-                    $dayOfWeek = strtolower($date->format('l'));
-                    $this->info("Day of week: {$dayOfWeek}, Weekend days: " . json_encode($weekendDays));
+                    $logMessage = "Processing company ID {$companyId} with weekend configuration: " . json_encode($weekendDays);
+                    $this->info($logMessage);
+                    Log::info($logMessage);
                     
-                    // If it's a Saturday, log which Saturday of the month it is
-                    if ($dayOfWeek === 'saturday') {
-                        $saturdayOfMonth = (int)ceil($date->day / 7);
-                        $this->info("This is the {$saturdayOfMonth} Saturday of the month");
+                    // Check if the date is a weekend for this company
+                    if ($this->attendanceService->isWeekend($date)) {
+                        $logMessage = "Date {$dateString} is a weekend for company ID: {$companyId}";
+                        $this->info($logMessage);
+                        Log::info($logMessage);
                         
-                        // Check for special Saturday patterns
-                        if (in_array('saturday_1_3', $weekendDays)) {
-                            $this->info("Company is configured for 1st and 3rd Saturdays off");
-                            if (in_array($saturdayOfMonth, [1, 3])) {
-                                $this->info("This should be a weekend (1st/3rd Saturday)");
+                        // Mark employees for this company
+                        $marked = $this->markEmployeesForCompany($companyId, $date);
+                        $markedCount += $marked;
+                        
+                        $logMessage = "Marked {$marked} employees as weekend-off for company ID: {$companyId}";
+                        $this->info($logMessage);
+                        Log::info($logMessage);
+                    } else {
+                        $logMessage = "Date {$dateString} is not a weekend for company ID: {$companyId}";
+                        $this->info($logMessage);
+                        Log::info($logMessage);
+                        
+                        // Log why it's not a weekend
+                        $dayOfWeek = strtolower($date->format('l'));
+                        $logMessage = "Day of week: {$dayOfWeek}, Weekend days: " . json_encode($weekendDays);
+                        $this->info($logMessage);
+                        Log::info($logMessage);
+                        
+                        // If it's a Saturday, log which Saturday of the month it is
+                        if ($dayOfWeek === 'saturday') {
+                            $saturdayOfMonth = (int)ceil($date->day / 7);
+                            $logMessage = "This is the {$saturdayOfMonth} Saturday of the month";
+                            $this->info($logMessage);
+                            Log::info($logMessage);
+                            
+                            // Check for special Saturday patterns
+                            if (in_array('saturday_1_3', $weekendDays)) {
+                                $logMessage = "Company is configured for 1st and 3rd Saturdays off";
+                                $this->info($logMessage);
+                                Log::info($logMessage);
+                                
+                                if (in_array($saturdayOfMonth, [1, 3])) {
+                                    $logMessage = "This should be a weekend (1st/3rd Saturday)";
+                                    $this->info($logMessage);
+                                    Log::info($logMessage);
+                                }
                             }
-                        }
-                        
-                        if (in_array('saturday_2_4', $weekendDays)) {
-                            $this->info("Company is configured for 2nd and 4th Saturdays off");
-                            if (in_array($saturdayOfMonth, [2, 4])) {
-                                $this->info("This should be a weekend (2nd/4th Saturday)");
+                            
+                            if (in_array('saturday_2_4', $weekendDays)) {
+                                $logMessage = "Company is configured for 2nd and 4th Saturdays off";
+                                $this->info($logMessage);
+                                Log::info($logMessage);
+                                
+                                if (in_array($saturdayOfMonth, [2, 4])) {
+                                    $logMessage = "This should be a weekend (2nd/4th Saturday)";
+                                    $this->info($logMessage);
+                                    Log::info($logMessage);
+                                }
                             }
                         }
                     }
+                } catch (\Exception $e) {
+                    $errorMessage = "Error processing company {$companyId}: " . $e->getMessage();
+                    $this->error($errorMessage);
+                    Log::error($errorMessage, [
+                        'company_id' => $companyId,
+                        'exception' => $e,
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    continue; // Continue with next company even if one fails
                 }
             }
             
-            $this->info("Successfully marked {$markedCount} employees as weekend-off.");
+            $logMessage = "Successfully marked {$markedCount} employees as weekend-off.";
+            $this->info($logMessage);
+            Log::info($logMessage);
+            
             return 0;
         } catch (\Exception $e) {
-            $this->error("Error marking weekend attendance: " . $e->getMessage());
-            Log::error('Error in MarkWeekendAsWeekoff command: ' . $e->getMessage(), [
+            $errorMessage = "Error in MarkWeekendAsWeekoff command: " . $e->getMessage();
+            $this->error($errorMessage);
+            Log::error($errorMessage, [
+                'exception' => $e,
                 'trace' => $e->getTraceAsString()
             ]);
             return 1;
