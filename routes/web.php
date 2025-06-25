@@ -420,5 +420,8 @@ Route::middleware(['auth'])->group(function () {
         // Employee ID Prefix Settings Save
         Route::post('/settings/save-employee-id-prefix', [\App\Http\Controllers\CompanyAdminController::class, 'saveEmployeeIdPrefix'])->name('settings.save-employee-id-prefix');
         Route::get('/settings/get-employee-id-prefix', [\App\Http\Controllers\CompanyAdminController::class, 'getEmployeeIdPrefix'])->name('settings.get-employee-id-prefix');
+
+        // Employee code generation for company-admin (AJAX)
+        Route::get('/employees/next-code', [\App\Http\Controllers\EmployeeController::class, 'getNextEmployeeCode'])->name('employees.next-code');
     });
 }); // End of auth middleware group
